@@ -41,7 +41,9 @@ add_library(WaveSabreVstLib
 	include/WaveSabreVstLib.h
 	src/ImageManager.cpp
 	src/NoTextCOptionMenu.cpp
-	src/VstEditor.cpp
+	src/CEnhancedKnob.cpp
+	src/VstVersion.cpp
+	src/VstEditor.cpp	
 	src/VstPlug.cpp)
 
 target_include_directories(WaveSabreVstLib PUBLIC
