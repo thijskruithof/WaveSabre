@@ -108,12 +108,20 @@ namespace WaveSabreVstLib
 
 	void VstPlug::getParameterLabel(VstInt32 index, char *label)
 	{
-		vst_strncpy(label, "%", kVstMaxParamStrLen);
+		char dummy[kVstMaxParamStrLen];
+		getParameterDisplayAndLabel(index, dummy, label);
 	}
 
 	void VstPlug::getParameterDisplay(VstInt32 index, char *text)
 	{
-		vst_strncpy(text, to_string(device->GetParam(index) * 100.0f).c_str(), kVstMaxParamStrLen);
+		char dummy[kVstMaxParamStrLen];
+		getParameterDisplayAndLabel(index, text, dummy);
+	}
+
+	void VstPlug::getParameterDisplayAndLabel(VstInt32 index, char* display, char* label)
+	{
+		snprintf(display, kVstMaxParamStrLen, "%.2f", 100.0f*device->GetParam(index));
+		vst_strncpy(label, "%", kVstMaxParamStrLen);
 	}
 
 	void VstPlug::getParameterName(VstInt32 index, char *text)

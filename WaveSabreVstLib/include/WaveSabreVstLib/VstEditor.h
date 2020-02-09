@@ -5,9 +5,11 @@
 #include "ImageManager.h"
 #include "NoTextCOptionMenu.h"
 
+#include <WaveSabreVstLib/CEnhancedKnob.h>
+
 namespace WaveSabreVstLib
 {
-	class VstEditor : public AEffGUIEditor, public CControlListener
+	class VstEditor : public AEffGUIEditor, public CEnhancedKnobListener
 	{
 	public:
 		VstEditor(AudioEffect *audioEffect, int width, int height, std::string title);
@@ -18,6 +20,8 @@ namespace WaveSabreVstLib
 
 		virtual void setParameter(VstInt32 index, float value);
 		virtual void valueChanged(CControl *control);
+
+		virtual void onGetKnobValueText(CEnhancedKnob* knob, char* text);
 
 		virtual bool open(void *ptr);
 		virtual void close();

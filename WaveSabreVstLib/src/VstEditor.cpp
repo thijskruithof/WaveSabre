@@ -1,4 +1,6 @@
 #include <WaveSabreVstLib/VstEditor.h>
+#include <WaveSabreVstLib/VstVersion.h>
+#include <WaveSabreVstLib/VstPlug.h>
 
 using namespace std;
 
@@ -7,8 +9,11 @@ namespace WaveSabreVstLib
 	const int BaseSize = 20;
 	const int LeftMargin = BaseSize;
 
+	const int BuildVersionHeight = 20;
+	const int BuildVersionTopMargin = 30;
+
 	const int TitleTopMargin = BaseSize / 2;
-	const int TitleAreaHeight = BaseSize * 2;
+	const int TitleAreaHeight = BaseSize * 2 + BuildVersionHeight * 2;
 
 	const int RowHeight = BaseSize * 3;
 
@@ -39,7 +44,7 @@ namespace WaveSabreVstLib
 
 		rect.left = rect.top = 0;
 		rect.right = width;
-		rect.bottom = height;
+		rect.bottom = height + BuildVersionHeight * 2;
 	}
 
 	VstEditor::~VstEditor()
@@ -77,6 +82,17 @@ namespace WaveSabreVstLib
 
 		frame->setBackground(ImageManager::Get(ImageManager::ImageIds::Background));
 		addTextLabel(LeftMargin, TitleTopMargin, 200, BaseSize, title);
+
+		// WaveSabre name and build
+		const int build_label_width = 110;
+		char build_label_text[256];
+		sprintf_s(build_label_text, 256, "build %d", VstVersion::getBuildNumber());
+		CTextLabel* brand_label = addTextLabel(LeftMargin, BuildVersionTopMargin, build_label_width, BaseSize, "Wave Sabre#Inque", kNormalFont, kLeftText);
+		brand_label->setBackColor(VSTGUI::kGreyCColor);
+		brand_label->setFrameColor(VSTGUI::kGreyCColor);
+		brand_label->setFontColor(VSTGUI::kWhiteCColor);
+		brand_label->setTransparency(false);
+		addTextLabel(LeftMargin + 2, BuildVersionTopMargin + 20, build_label_width, BaseSize, build_label_text, kNormalFont, kLeftText);
 
 		currentX = LeftMargin;
 		currentY = TitleAreaHeight;
@@ -117,6 +133,16 @@ namespace WaveSabreVstLib
 		frame->addView(c);
 
 		return c;
+	}	
+
+	void VstEditor::onGetKnobValueText(CEnhancedKnob* knob, char* text)
+	{
+		VstInt32 param = knob->getTag();
+
+		VstPlug* plug = (VstPlug*)effect;
+		char disp[kVstMaxParamStrLen + 1], label[kVstMaxParamStrLen + 1];
+		plug->getParameterDisplayAndLabel(param, disp, label);
+		sprintf_s(text, 256, "%s%s", disp, label);
 	}
 
 	CAnimKnob *VstEditor::addKnob(VstInt32 param, string caption)
@@ -129,12 +155,13 @@ namespace WaveSabreVstLib
 		CBitmap *image = ImageManager::Get(ImageManager::ImageIds::Knob1);
 
 		CRect size(x + KnobKnobOffset, y, x + KnobKnobOffset + image->getWidth(), y + image->getWidth());
-		CAnimKnob *c = new CAnimKnob(size, this, param, image->getHeight() / image->getWidth(), image->getWidth(), image, CPoint(0));
+		CEnhancedKnob*c = new CEnhancedKnob(size, this, param, image->getHeight() / image->getWidth(), image->getWidth(), image, CPoint(0));
 	
 		float v = effect->getParameter(param);
 		c->setDefaultValue(v);
 		c->setValue(v);
 		c->setTransparency(true);
+		c->setTag(param);
 		frame->addView(c);
 
 		controls.emplace(param, c);
