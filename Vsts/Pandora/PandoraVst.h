@@ -10,6 +10,7 @@ public:
 	PandoraVst(audioMasterCallback audioMaster);
 
 	virtual void getParameterName(VstInt32 index, char *text);
+	virtual void getParameterDisplayAndLabel(VstInt32 index, char* display, char* label);
 
 	virtual bool getEffectName(char *name);
 	virtual bool getProductString(char *text);

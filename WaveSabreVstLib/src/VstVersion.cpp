@@ -2,7 +2,7 @@
 
 namespace VstVersion
 {
-	const int cBuildNumber = 3;
+	const int cBuildNumber = 4;
 
 	int getBuildNumber()
 	{

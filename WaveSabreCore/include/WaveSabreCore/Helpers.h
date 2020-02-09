@@ -30,6 +30,7 @@ namespace WaveSabreCore
 		static double Square35(double phase);
 
 		static float Mix(float v1, float v2, float mix);
+		static int Clamp(int v, int min, int max);
 		static float Clamp(float f, float min, float max);
 
 		static float DbToScalar(float db);
@@ -72,6 +73,27 @@ namespace WaveSabreCore
 
 		static VoiceMode ParamToVoiceMode(float param);
 		static float VoiceModeToParam(VoiceMode type);
+
+		// 0..1 --> 0..enum::COUNT-1
+		template <typename taEnumType>
+		static taEnumType ParamToEnum(float value)
+		{
+			return (taEnumType)Clamp((int)floorf(value * (float)((int)taEnumType::COUNT - 1)), 0, (int)taEnumType::COUNT - 1);
+		}
+
+		// 0..enum::COUNT-1 --> 0..1
+		template <typename taEnumType>
+		static float EnumToParam(taEnumType value)
+		{
+			return Clamp((float)value / (float)((int)taEnumType::COUNT - 1), 0.0f, 1.0f);
+		}
+
+		static int ParamToRangedInt(float value, int minOutput, int maxOutput);
+		static float RangedIntToParam(int value, int minValue, int maxValue);
+
+		static float ParamToRangedFloat(float value, float minOutput, float maxOutput);
+		static float RangedFloatToParam(float value, float minValue, float maxValue);
+
 	private:
 		static const int fastCosTabLog2Size = 9; // size = 512
 		static const int fastCosTabSize = (1 << fastCosTabLog2Size);

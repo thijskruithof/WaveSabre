@@ -203,6 +203,13 @@ namespace WaveSabreCore
 		return v1 * (1.0f - mix) + v2 * mix;
 	}
 
+	int Helpers::Clamp(int v, int min, int max)
+	{
+		if (v < min) return min;
+		if (v > max) return max;
+		return v;
+	}
+
 	float Helpers::Clamp(float f, float min, float max)
 	{
 		if (f < min) return min;
@@ -364,5 +371,25 @@ namespace WaveSabreCore
 	float Helpers::VoiceModeToParam(VoiceMode voiceMode)
 	{
 		return (float)voiceMode / 1.0f;
+	}
+
+	int Helpers::ParamToRangedInt(float value, int minOutput, int maxOutput)
+	{
+		return minOutput + (int)floorf(value * (float)(maxOutput-minOutput));
+	}
+
+	float Helpers::RangedIntToParam(int value, int minValue, int maxValue)
+	{
+		return Clamp((float)(value - minValue) / (float)(maxValue - minValue), 0.0f, 1.0f);
+	}
+
+	float Helpers::ParamToRangedFloat(float value, float minOutput, float maxOutput)
+	{
+		return minOutput + value * (float)(maxOutput - minOutput);
+	}
+
+	float Helpers::RangedFloatToParam(float value, float minValue, float maxValue)
+	{
+		return Clamp((value - minValue) / (maxValue - minValue), 0.0f, 1.0f);
 	}
 }
