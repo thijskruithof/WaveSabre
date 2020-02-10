@@ -47,6 +47,10 @@ namespace WaveSabreVstLib
 		void setEditor(VstEditor *editor);
 		WaveSabreCore::Device *getDevice() const;
 
+		void setParameterDisplayAndLabel(char* display, char* label, bool value);
+		void setParameterDisplayAndLabel(char* display, char* label, float value, int decimals, const char* units = "");
+		void setParameterDisplayAndLabel(char* display, char* label, int value, const char* units = "");
+
 	private:
 		int numParams, numInputs, numOutputs;
 		bool synth;

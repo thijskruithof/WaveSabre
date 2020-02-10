@@ -183,4 +183,24 @@ namespace WaveSabreVstLib
 	{
 		return device;
 	}
+
+	void VstPlug::setParameterDisplayAndLabel(char* display, char* label, bool value)
+	{
+		vst_strncpy(display, value ? "On" : "Off", kVstMaxParamStrLen);
+		vst_strncpy(label, "", kVstMaxParamStrLen);
+	}
+
+	void VstPlug::setParameterDisplayAndLabel(char* display, char* label, float value, int decimals, const char* units)
+	{
+		char fmt[8];
+		sprintf_s(fmt, 8, "%%.%df", decimals);
+		sprintf_s(display, kVstMaxParamStrLen, fmt, value);
+		vst_strncpy(label, units, kVstMaxParamStrLen);
+	}
+
+	void VstPlug::setParameterDisplayAndLabel(char* display, char* label, int value, const char* units)
+	{
+		sprintf_s(display, kVstMaxParamStrLen, "%d", value);
+		vst_strncpy(label, units, kVstMaxParamStrLen);
+	}
 }
