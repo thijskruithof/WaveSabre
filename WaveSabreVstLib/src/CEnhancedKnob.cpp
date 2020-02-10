@@ -166,10 +166,10 @@ namespace WaveSabreVstLib
 
 	void CEnhancedKnob::CValueChangeListener::valueChanged(VSTGUI::CControl* pControl)
 	{
-		knob->updateValueLabel();
-
 		if (otherListener != nullptr)
 			otherListener->valueChanged(pControl);
+
+		knob->updateValueLabel();
 	}
 }
 
