@@ -164,13 +164,13 @@ namespace WaveSabreCore
 	}
 
 	// 0..1 --> 1..2^48
-	static int sArpeggioIntervalLinearToExponential(float value)
+	static __int64 sArpeggioIntervalLinearToExponential(float value)
 	{
-		return (1 << (int)(value * 48.0f));
+		return ((__int64)1 << (__int64)(value * 48.0));
 	}
 
 	// 1..2^48 --> 0..1
-	static float sArpeggioIntervalExponentialToLinear(int value)
+	static float sArpeggioIntervalExponentialToLinear(__int64 value)
 	{
 		return Helpers::Clamp(floorf(log2f((float)value)) / 48.0f, 0.0f, 1.0f);
 	}

@@ -116,7 +116,7 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::MixAmountOsc3:				PLUG_GET_PARAM_DISPLAY(Pandora, mixAmountOsc3, "%.2f", ""); break;
 	case Pandora::ParamIndices::StringDamping:				PLUG_GET_PARAM_DISPLAY(Pandora, stringDamping, "%.2f", ""); break;
 	case Pandora::ParamIndices::StringFeedbackAmount:		PLUG_GET_PARAM_DISPLAY(Pandora, stringFeedbackAmount, "%.2f", ""); break;
-	case Pandora::ParamIndices::StringFeedbackDelay:		PLUG_GET_PARAM_DISPLAY(Pandora, stringFeedbackDelay, "%d", "smpls"); break;
+	case Pandora::ParamIndices::StringFeedbackDelay:		PLUG_GET_PARAM_DISPLAY(Pandora, stringFeedbackDelay, "%d", " smpls"); break;
 	case Pandora::ParamIndices::StringThickness:			PLUG_GET_PARAM_DISPLAY(Pandora, stringThickness, "%.2f", ""); break;
 	case Pandora::ParamIndices::StringLevel:				PLUG_GET_PARAM_DISPLAY(Pandora, stringLevel, "%.2f", ""); break;
 	case Pandora::ParamIndices::OscStringMix:				PLUG_GET_PARAM_DISPLAY(Pandora, oscStringMix, "%.2f", ""); break;
@@ -133,28 +133,28 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::Lfo1positive:				PLUG_GET_PARAM_DISPLAY(Pandora, lfo1positive, "%d", ""); break;
 	case Pandora::ParamIndices::Lfo2positive:				PLUG_GET_PARAM_DISPLAY(Pandora, lfo2positive, "%d", ""); break;
 	case Pandora::ParamIndices::Lfo3positive:				PLUG_GET_PARAM_DISPLAY(Pandora, lfo3positive, "%d", ""); break;
-	case Pandora::ParamIndices::Envelope1attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.attackRate, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope1decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.decayRate, "%.2f", ""); break;
+	case Pandora::ParamIndices::Envelope1attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.attackRate, "%.5f", ""); break;
+	case Pandora::ParamIndices::Envelope1decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.decayRate, "%.5f", ""); break;
 	case Pandora::ParamIndices::Envelope1sustainLevel:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.sustainLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope1releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.releaseRate, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope2attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.attackRate, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope2decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.decayRate, "%.2f", ""); break;
+	case Pandora::ParamIndices::Envelope1releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.releaseRate, "%.5f", ""); break;
+	case Pandora::ParamIndices::Envelope2attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.attackRate, "%.5f", ""); break;
+	case Pandora::ParamIndices::Envelope2decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.decayRate, "%.5f", ""); break;
 	case Pandora::ParamIndices::Envelope2sustainLevel:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.sustainLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope2releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.releaseRate, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope3attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.attackRate, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope3decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.decayRate, "%.2f", ""); break;
+	case Pandora::ParamIndices::Envelope2releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.releaseRate, "%.5f", ""); break;
+	case Pandora::ParamIndices::Envelope3attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.attackRate, "%.5f", ""); break;
+	case Pandora::ParamIndices::Envelope3decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.decayRate, "%.5f", ""); break;
 	case Pandora::ParamIndices::Envelope3sustainLevel:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.sustainLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope3releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.releaseRate, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope4attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.attackRate, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope4decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.decayRate, "%.2f", ""); break;
+	case Pandora::ParamIndices::Envelope3releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.releaseRate, "%.5f", ""); break;
+	case Pandora::ParamIndices::Envelope4attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.attackRate, "%.5f", ""); break;
+	case Pandora::ParamIndices::Envelope4decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.decayRate, "%.5f", ""); break;
 	case Pandora::ParamIndices::Envelope4sustainLevel:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.sustainLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope4releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.releaseRate, "%.2f", ""); break;
+	case Pandora::ParamIndices::Envelope4releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.releaseRate, "%.5f", ""); break;
 	case Pandora::ParamIndices::VcfRouting:					PLUG_GET_PARAM_DISPLAY(Pandora, vcfRouting, "%d", ""); break;
 	case Pandora::ParamIndices::Vcf1type:					PLUG_GET_PARAM_DISPLAY(Pandora, vcf1type, "%d", ""); break;
-	case Pandora::ParamIndices::Vcf1Cutoff:					PLUG_GET_PARAM_DISPLAY(Pandora, vcf1Cutoff, "%.5f", ""); break;
+	case Pandora::ParamIndices::Vcf1Cutoff:					PLUG_GET_PARAM_DISPLAY(Pandora, vcf1Cutoff, "%.3f", ""); break;
 	case Pandora::ParamIndices::Vcf1Resonance:				PLUG_GET_PARAM_DISPLAY(Pandora, vcf1Resonance, "%.2f", ""); break;
 	case Pandora::ParamIndices::Vcf2type:					PLUG_GET_PARAM_DISPLAY(Pandora, vcf2type, "%d", ""); break;
-	case Pandora::ParamIndices::Vcf2Cutoff:					PLUG_GET_PARAM_DISPLAY(Pandora, vcf2Cutoff, "%.5f", ""); break;
+	case Pandora::ParamIndices::Vcf2Cutoff:					PLUG_GET_PARAM_DISPLAY(Pandora, vcf2Cutoff, "%.3f", ""); break;
 	case Pandora::ParamIndices::Vcf2Resonance:				PLUG_GET_PARAM_DISPLAY(Pandora, vcf2Resonance, "%.2f", ""); break;
 	case Pandora::ParamIndices::VcfCtrlBalance:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::Vcf2CutoffRelative:			PLUG_GET_PARAM_DISPLAY(Pandora, vcf2CutoffRelative, "%d", ""); break;
@@ -162,13 +162,13 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::FilterDistDrive:			PLUG_GET_PARAM_DISPLAY(Pandora, filterDistDrive, "%.2f", ""); break;
 	case Pandora::ParamIndices::FilterDistShape:			PLUG_GET_PARAM_DISPLAY(Pandora, filterDistShape, "%.2f", ""); break;
 	case Pandora::ParamIndices::DoSlide:					PLUG_GET_PARAM_DISPLAY(Pandora, doSlide, "%d", ""); break;
-	case Pandora::ParamIndices::SlideSpeed:					PLUG_GET_PARAM_DISPLAY(Pandora, slideSpeed, "%.2f", ""); break;
+	case Pandora::ParamIndices::SlideSpeed:					PLUG_GET_PARAM_DISPLAY(Pandora, slideSpeed, "%.4f", ""); break;
 	case Pandora::ParamIndices::NumUnisonVoices:			PLUG_GET_PARAM_DISPLAY(Pandora, numUnisonVoices, "%d", ""); break;
 	case Pandora::ParamIndices::UnisonSpread:				PLUG_GET_PARAM_DISPLAY(Pandora, unisonSpread, "%.2f", ""); break;
 	case Pandora::ParamIndices::ArpeggioType:				PLUG_GET_PARAM_DISPLAY(Pandora, arpeggioType, "%d", ""); break;
 	case Pandora::ParamIndices::ArpeggioNumOctaves:			PLUG_GET_PARAM_DISPLAY(Pandora, arpeggioNumOctaves, "%d", ""); break;
-	case Pandora::ParamIndices::ArpeggioInterval:			PLUG_GET_PARAM_DISPLAY(Pandora, arpeggioInterval, "%d", ""); break;
-	case Pandora::ParamIndices::ArpeggioNoteDuration:		PLUG_GET_PARAM_DISPLAY(Pandora, arpeggioNoteDuration, "%d", ""); break;
+	case Pandora::ParamIndices::ArpeggioInterval:			VstPlug::getParameterDisplayAndLabel(index, display, label); break;
+	case Pandora::ParamIndices::ArpeggioNoteDuration:		VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	}
 }
 
