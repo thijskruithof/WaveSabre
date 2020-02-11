@@ -94,78 +94,127 @@ void PandoraVst::getParameterName(VstInt32 index, char *text)
 }
 
 
+const char* gStrOscWaveformType[(int)Pandora::OscWaveformType::COUNT] = {
+	"OFF",
+	"SINE",
+	"SQUARE",
+	"SAW",
+	"TRIANGLE",
+	"NOISE",
+	"BISQUARE",
+	"NOISE_LOOP"
+};
+
+const char* gStrLfoWaveformType[(int)Pandora::LfoWaveformType::COUNT] = {
+	"SINE",
+	"SQUARE",
+	"BISQUARE",
+	"SAW",
+	"TRIANGLE",
+	"NOISEHOLD",
+	"NOISEGLIDE"
+};
+
+const char* gStrFilterType[(int)Pandora::FilterType::COUNT] = {
+	"LPF",
+	"BPF",
+	"HPF",
+	"ALLPASS",
+	"NOTCH"
+};
+
+const char* gStrFilterRoutingType[(int)Pandora::FilterRoutingType::COUNT] = {
+	"NONE",
+	"SINGLE",
+	"SERIAL",
+	"PARALLEL"
+};
+
+const char* gStrLfoSyncType[(int)Pandora::LfoSyncType::COUNT] = {
+	"OFF",
+	"KEY",
+	"GATE"
+};
+
+const char* gStrArpeggioType[(int)Pandora::ArpeggioType::COUNT] = {
+	"OFF",
+	"UP",
+	"DOWN",
+	"UPDOWN"
+};
+
 
 void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char* label)
 {
 	switch ((Echo::ParamIndices)index)
 	{
-	case Pandora::ParamIndices::Osc1waveform:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->osc1waveform); break;
-	case Pandora::ParamIndices::Osc2waveform:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->osc2waveform); break;
-	case Pandora::ParamIndices::Osc3waveform:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->osc3waveform); break;
+	case Pandora::ParamIndices::Osc1waveform:				setParameterDisplayAndLabel(display, label, gStrOscWaveformType[(int)((Pandora*)getDevice())->osc1waveform]); break;
+	case Pandora::ParamIndices::Osc2waveform:				setParameterDisplayAndLabel(display, label, gStrOscWaveformType[(int)((Pandora*)getDevice())->osc2waveform]); break;
+	case Pandora::ParamIndices::Osc3waveform:				setParameterDisplayAndLabel(display, label, gStrOscWaveformType[(int)((Pandora*)getDevice())->osc3waveform]); break;
 	case Pandora::ParamIndices::Osc1baseToneTranspose:		setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->osc1baseToneTranspose); break;
 	case Pandora::ParamIndices::Osc2baseToneTranspose:		setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->osc2baseToneTranspose); break;
 	case Pandora::ParamIndices::Osc3baseToneTranspose:		setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->osc3baseToneTranspose); break;
-	case Pandora::ParamIndices::Osc1finetune:				PLUG_GET_PARAM_DISPLAY(Pandora, osc1finetune, "%.2f", ""); break;
-	case Pandora::ParamIndices::Osc2finetune:				PLUG_GET_PARAM_DISPLAY(Pandora, osc2finetune, "%.2f", ""); break;
-	case Pandora::ParamIndices::Osc3finetune:				PLUG_GET_PARAM_DISPLAY(Pandora, osc3finetune, "%.2f", ""); break;
-	case Pandora::ParamIndices::Osc1pulseWidth:				PLUG_GET_PARAM_DISPLAY(Pandora, osc1pulseWidth, "%.2f", ""); break;
-	case Pandora::ParamIndices::Osc2pulseWidth:				PLUG_GET_PARAM_DISPLAY(Pandora, osc2pulseWidth, "%.2f", ""); break;
-	case Pandora::ParamIndices::Osc3pulseWidth:				PLUG_GET_PARAM_DISPLAY(Pandora, osc3pulseWidth, "%.2f", ""); break;
-	case Pandora::ParamIndices::MixAmountOsc1:				PLUG_GET_PARAM_DISPLAY(Pandora, mixAmountOsc1, "%.2f", ""); break;
-	case Pandora::ParamIndices::MixAmountOsc2:				PLUG_GET_PARAM_DISPLAY(Pandora, mixAmountOsc2, "%.2f", ""); break;
-	case Pandora::ParamIndices::MixAmountOsc3:				PLUG_GET_PARAM_DISPLAY(Pandora, mixAmountOsc3, "%.2f", ""); break;
-	case Pandora::ParamIndices::StringDamping:				PLUG_GET_PARAM_DISPLAY(Pandora, stringDamping, "%.2f", ""); break;
-	case Pandora::ParamIndices::StringFeedbackAmount:		PLUG_GET_PARAM_DISPLAY(Pandora, stringFeedbackAmount, "%.2f", ""); break;
+	case Pandora::ParamIndices::Osc1finetune:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->osc1finetune, 2); break;  
+	case Pandora::ParamIndices::Osc2finetune:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->osc2finetune, 2); break; 
+	case Pandora::ParamIndices::Osc3finetune:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->osc3finetune, 2); break; 
+	case Pandora::ParamIndices::Osc1pulseWidth:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->osc1pulseWidth, 2); break;
+	case Pandora::ParamIndices::Osc2pulseWidth:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->osc2pulseWidth, 2); break;
+	case Pandora::ParamIndices::Osc3pulseWidth:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->osc3pulseWidth, 2); break;
+	case Pandora::ParamIndices::MixAmountOsc1:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->mixAmountOsc1, 2); break;
+	case Pandora::ParamIndices::MixAmountOsc2:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->mixAmountOsc2, 2); break;
+	case Pandora::ParamIndices::MixAmountOsc3:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->mixAmountOsc3, 2); break;
+	case Pandora::ParamIndices::StringDamping:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->stringDamping, 2); break;
+	case Pandora::ParamIndices::StringFeedbackAmount:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->stringFeedbackAmount, 2); break;
 	case Pandora::ParamIndices::StringFeedbackDelay:		setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->stringFeedbackDelay, " smpls"); break;
-	case Pandora::ParamIndices::StringThickness:			PLUG_GET_PARAM_DISPLAY(Pandora, stringThickness, "%.2f", ""); break;
-	case Pandora::ParamIndices::StringLevel:				PLUG_GET_PARAM_DISPLAY(Pandora, stringLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::OscStringMix:				PLUG_GET_PARAM_DISPLAY(Pandora, oscStringMix, "%.2f", ""); break;
+	case Pandora::ParamIndices::StringThickness:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->stringThickness, 2); break;
+	case Pandora::ParamIndices::StringLevel:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->stringLevel, 2); break;
+	case Pandora::ParamIndices::OscStringMix:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->oscStringMix, 2); break;
 	case Pandora::ParamIndices::Osc2sync:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->osc2sync); break;
-	case Pandora::ParamIndices::Lfo1rate:					PLUG_GET_PARAM_DISPLAY(Pandora, lfo1rate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Lfo2rate:					PLUG_GET_PARAM_DISPLAY(Pandora, lfo2rate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Lfo3rate:					PLUG_GET_PARAM_DISPLAY(Pandora, lfo3rate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Lfo1waveform:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->lfo1waveform); break;
-	case Pandora::ParamIndices::Lfo2waveform:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->lfo2waveform); break;
-	case Pandora::ParamIndices::Lfo3waveform:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->lfo3waveform); break;
-	case Pandora::ParamIndices::Lfo1keysync:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->lfo1keysync); break;
-	case Pandora::ParamIndices::Lfo2keysync:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->lfo2keysync); break;
-	case Pandora::ParamIndices::Lfo3keysync:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->lfo3keysync); break;
+	case Pandora::ParamIndices::Lfo1rate:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->lfo1rate, 5); break; 
+	case Pandora::ParamIndices::Lfo2rate:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->lfo2rate, 5); break; 
+	case Pandora::ParamIndices::Lfo3rate:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->lfo3rate, 5); break; 
+	case Pandora::ParamIndices::Lfo1waveform:				setParameterDisplayAndLabel(display, label, gStrLfoWaveformType[(int)((Pandora*)getDevice())->lfo1waveform]); break;
+	case Pandora::ParamIndices::Lfo2waveform:				setParameterDisplayAndLabel(display, label, gStrLfoWaveformType[(int)((Pandora*)getDevice())->lfo2waveform]); break;
+	case Pandora::ParamIndices::Lfo3waveform:				setParameterDisplayAndLabel(display, label, gStrLfoWaveformType[(int)((Pandora*)getDevice())->lfo3waveform]); break;
+	case Pandora::ParamIndices::Lfo1keysync:				setParameterDisplayAndLabel(display, label, gStrLfoSyncType[(int)((Pandora*)getDevice())->lfo1keysync]); break;
+	case Pandora::ParamIndices::Lfo2keysync:				setParameterDisplayAndLabel(display, label, gStrLfoSyncType[(int)((Pandora*)getDevice())->lfo2keysync]); break;
+	case Pandora::ParamIndices::Lfo3keysync:				setParameterDisplayAndLabel(display, label, gStrLfoSyncType[(int)((Pandora*)getDevice())->lfo3keysync]); break;
 	case Pandora::ParamIndices::Lfo1positive:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->lfo1positive); break;
 	case Pandora::ParamIndices::Lfo2positive:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->lfo2positive); break;
 	case Pandora::ParamIndices::Lfo3positive:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->lfo3positive); break;
-	case Pandora::ParamIndices::Envelope1attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.attackRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope1decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.decayRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope1sustainLevel:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.sustainLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope1releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope1.releaseRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope2attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.attackRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope2decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.decayRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope2sustainLevel:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.sustainLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope2releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope2.releaseRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope3attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.attackRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope3decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.decayRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope3sustainLevel:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.sustainLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope3releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope3.releaseRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope4attackRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.attackRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope4decayRate:			PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.decayRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::Envelope4sustainLevel:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.sustainLevel, "%.2f", ""); break;
-	case Pandora::ParamIndices::Envelope4releaseRate:		PLUG_GET_PARAM_DISPLAY(Pandora, envelope4.releaseRate, "%.5f", ""); break;
-	case Pandora::ParamIndices::VcfRouting:					setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->vcfRouting); break;
-	case Pandora::ParamIndices::Vcf1type:					setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->vcf1type); break;
-	case Pandora::ParamIndices::Vcf1Cutoff:					PLUG_GET_PARAM_DISPLAY(Pandora, vcf1Cutoff, "%.3f", ""); break;
-	case Pandora::ParamIndices::Vcf1Resonance:				PLUG_GET_PARAM_DISPLAY(Pandora, vcf1Resonance, "%.2f", ""); break;
-	case Pandora::ParamIndices::Vcf2type:					setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->vcf2type); break;
-	case Pandora::ParamIndices::Vcf2Cutoff:					PLUG_GET_PARAM_DISPLAY(Pandora, vcf2Cutoff, "%.3f", ""); break;
-	case Pandora::ParamIndices::Vcf2Resonance:				PLUG_GET_PARAM_DISPLAY(Pandora, vcf2Resonance, "%.2f", ""); break;
+	case Pandora::ParamIndices::Envelope1attackRate:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope1.attackRate, 5); break; 
+	case Pandora::ParamIndices::Envelope1decayRate:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope1.decayRate, 5); break; 
+	case Pandora::ParamIndices::Envelope1sustainLevel:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope1.sustainLevel, 2); break;
+	case Pandora::ParamIndices::Envelope1releaseRate:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope1.releaseRate, 5); break; 
+	case Pandora::ParamIndices::Envelope2attackRate:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope2.attackRate, 5); break;
+	case Pandora::ParamIndices::Envelope2decayRate:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope2.decayRate, 5); break;
+	case Pandora::ParamIndices::Envelope2sustainLevel:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope2.sustainLevel, 2); break;
+	case Pandora::ParamIndices::Envelope2releaseRate:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope2.releaseRate, 5); break;
+	case Pandora::ParamIndices::Envelope3attackRate:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope3.attackRate, 5); break;
+	case Pandora::ParamIndices::Envelope3decayRate:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope3.decayRate, 5); break;
+	case Pandora::ParamIndices::Envelope3sustainLevel:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope3.sustainLevel, 2); break;
+	case Pandora::ParamIndices::Envelope3releaseRate:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope3.releaseRate, 5); break;
+	case Pandora::ParamIndices::Envelope4attackRate:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope4.attackRate, 5); break;
+	case Pandora::ParamIndices::Envelope4decayRate:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope4.decayRate, 5); break;
+	case Pandora::ParamIndices::Envelope4sustainLevel:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope4.sustainLevel, 2); break;
+	case Pandora::ParamIndices::Envelope4releaseRate:		setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->envelope4.releaseRate, 5); break;
+	case Pandora::ParamIndices::VcfRouting:					setParameterDisplayAndLabel(display, label, gStrFilterRoutingType[(int)((Pandora*)getDevice())->vcfRouting]); break;
+	case Pandora::ParamIndices::Vcf1type:					setParameterDisplayAndLabel(display, label, gStrFilterType[(int)((Pandora*)getDevice())->vcf1type]); break;
+	case Pandora::ParamIndices::Vcf1Cutoff:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf1Cutoff, 3); break; 
+	case Pandora::ParamIndices::Vcf1Resonance:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf1Resonance, 2); break;
+	case Pandora::ParamIndices::Vcf2type:					setParameterDisplayAndLabel(display, label, gStrFilterType[(int)((Pandora*)getDevice())->vcf2type]); break;
+	case Pandora::ParamIndices::Vcf2Cutoff:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf2Cutoff, 3); break; 
+	case Pandora::ParamIndices::Vcf2Resonance:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf2Resonance, 2); break;
 	case Pandora::ParamIndices::VcfCtrlBalance:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::Vcf2CutoffRelative:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf2CutoffRelative); break;
 	case Pandora::ParamIndices::VcfDistType:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
-	case Pandora::ParamIndices::FilterDistDrive:			PLUG_GET_PARAM_DISPLAY(Pandora, filterDistDrive, "%.2f", ""); break;
-	case Pandora::ParamIndices::FilterDistShape:			PLUG_GET_PARAM_DISPLAY(Pandora, filterDistShape, "%.2f", ""); break;
+	case Pandora::ParamIndices::FilterDistDrive:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->filterDistDrive, 2); break;
+	case Pandora::ParamIndices::FilterDistShape:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->filterDistShape, 2); break;
 	case Pandora::ParamIndices::DoSlide:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->doSlide); break;
-	case Pandora::ParamIndices::SlideSpeed:					PLUG_GET_PARAM_DISPLAY(Pandora, slideSpeed, "%.4f", ""); break;
+	case Pandora::ParamIndices::SlideSpeed:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->slideSpeed, 4); break;  
 	case Pandora::ParamIndices::NumUnisonVoices:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->numUnisonVoices); break;
-	case Pandora::ParamIndices::UnisonSpread:				PLUG_GET_PARAM_DISPLAY(Pandora, unisonSpread, "%.2f", ""); break;
-	case Pandora::ParamIndices::ArpeggioType:				setParameterDisplayAndLabel(display, label, (int)((Pandora*)getDevice())->arpeggioType); break;
+	case Pandora::ParamIndices::UnisonSpread:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->unisonSpread, 2); break;
+	case Pandora::ParamIndices::ArpeggioType:				setParameterDisplayAndLabel(display, label, gStrArpeggioType[(int)((Pandora*)getDevice())->arpeggioType]); break;
 	case Pandora::ParamIndices::ArpeggioNumOctaves:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->arpeggioNumOctaves); break;
 	case Pandora::ParamIndices::ArpeggioInterval:			VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::ArpeggioNoteDuration:		VstPlug::getParameterDisplayAndLabel(index, display, label); break;

@@ -203,4 +203,10 @@ namespace WaveSabreVstLib
 		sprintf_s(display, kVstMaxParamStrLen, "%d", value);
 		vst_strncpy(label, units, kVstMaxParamStrLen);
 	}
+
+	void VstPlug::setParameterDisplayAndLabel(char* display, char* label, const char* value)
+	{
+		vst_strncpy(display, value, kVstMaxParamStrLen);
+		vst_strncpy(label, "", kVstMaxParamStrLen);
+	}
 }

@@ -48,6 +48,7 @@ namespace WaveSabreVstLib
 		void setParameterDisplayAndLabel(char* display, char* label, bool value);
 		void setParameterDisplayAndLabel(char* display, char* label, float value, int decimals, const char* units = "");
 		void setParameterDisplayAndLabel(char* display, char* label, int value, const char* units = "");
+		void setParameterDisplayAndLabel(char* display, char* label, const char* value);
 
 	private:
 		int numParams, numInputs, numOutputs;

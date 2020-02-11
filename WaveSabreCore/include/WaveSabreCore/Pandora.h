@@ -113,6 +113,9 @@ namespace WaveSabreCore
 		};
 
 
+	public:
+		// These internal parameters are made public, so that the PandoraVST can directly read them to display the correct internal value.
+
 		enum class OscWaveformType
 		{
 			OFF = 0,
@@ -194,8 +197,6 @@ namespace WaveSabreCore
 			COUNT
 		};
 
-	public:
-		// These internal parameters are made public, so that the PandoraVST can directly read them to display the correct internal value.
 
 		// Oscs:
 		OscWaveformType osc1waveform;				// type of waveform for oscillator
