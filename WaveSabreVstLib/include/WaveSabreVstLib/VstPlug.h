@@ -6,8 +6,6 @@
 
 #include <WaveSabreCore.h>
 
-#define PLUG_GET_PARAM_DISPLAY(className, varName, fmt, units) sprintf_s(display, kVstMaxParamStrLen, fmt, ((className*)getDevice())->varName); vst_strncpy(label, units, kVstMaxParamStrLen);
-
 namespace WaveSabreVstLib
 {
 	class VstPlug : public AudioEffectX
