@@ -2,10 +2,10 @@
 
 namespace VstVersion
 {
-	const int cBuildNumber = 5;
+	const int cCoreBuildNumber = 5;
 
-	int getBuildNumber()
+	int getCoreBuildNumber()
 	{
-		return cBuildNumber;
+		return cCoreBuildNumber;
 	}
 }

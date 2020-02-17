@@ -13,7 +13,7 @@ public:
 	virtual void getParameterDisplayAndLabel(VstInt32 index, char* display, char* label);
 
 	virtual bool getEffectName(char *name);
-	virtual bool getProductString(char *text);
+	virtual bool getProductString(char *text);	
 };
 
 #endif

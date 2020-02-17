@@ -12,6 +12,7 @@ add_library(WaveSabreCore
 	include/WaveSabreCore/Echo.h
 	include/WaveSabreCore/Envelope.h
 	include/WaveSabreCore/Falcon.h
+	include/WaveSabreCore/FixedSizeList.h
 	include/WaveSabreCore/GmDls.h
 	include/WaveSabreCore/Helpers.h
 	include/WaveSabreCore/Leveller.h

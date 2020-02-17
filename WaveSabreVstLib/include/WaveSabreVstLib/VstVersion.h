@@ -2,5 +2,5 @@
 
 namespace VstVersion
 {
-	extern int getBuildNumber();
+	extern int getCoreBuildNumber();
 }

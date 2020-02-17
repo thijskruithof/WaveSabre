@@ -38,6 +38,8 @@ namespace WaveSabreVstLib
 		virtual bool getProductString(char *text);
 		virtual VstInt32 getVendorVersion();
 
+		virtual void getEffectBuildNumberString(char* buildNumber);
+
 		virtual VstInt32 canDo(char *text);
 		virtual VstInt32 getNumMidiInputChannels();
 

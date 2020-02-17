@@ -5,6 +5,16 @@
 #include "Twister.h"
 #include "SynthDevice.h"
 
+#ifndef NDEBUG
+#include <windows.h>
+#include <stdio.h>
+#define ASSERT_MSG(cond, msg) if (!(cond)) { if (IsDebuggerPresent()) DebugBreak(); char s[1024]; sprintf_s(s,1024, "At %s:%d: %s\n", __FILE__, __LINE__, msg); OutputDebugStringA(s); }
+#define ASSERT(cond) ASSERT_MSG(cond, #cond)
+#else
+#define ASSERT_MSG(x,y) {}
+#define ASSERT(x) {}
+#endif
+
 namespace WaveSabreCore
 {
 	class Helpers

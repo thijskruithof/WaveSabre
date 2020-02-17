@@ -1,4 +1,5 @@
 #include <WaveSabreVstLib/VstPlug.h>
+#include <WaveSabreVstLib/VstVersion.h>
 
 using namespace std;
 using namespace WaveSabreCore;
@@ -142,25 +143,30 @@ namespace WaveSabreVstLib
 
 	bool VstPlug::getEffectName(char *name)
 	{
-		vst_strncpy(name, "I AM GOD, BITCH", kVstMaxEffectNameLen);
+		vst_strncpy(name, "WaveSabreXInque", kVstMaxEffectNameLen);
 		return true;
 	}
 
 	bool VstPlug::getVendorString(char *text)
 	{
-		vst_strncpy(text, "Logicoma", kVstMaxVendorStrLen);
+		vst_strncpy(text, "Logicoma+Inque", kVstMaxVendorStrLen);
 		return true;
 	}
 
 	bool VstPlug::getProductString(char *text)
 	{
-		vst_strncpy(text, "I AM GOD, BITCH", kVstMaxProductStrLen);
+		vst_strncpy(text, "WaveSabreXInque", kVstMaxProductStrLen);
 		return true;
 	}
 
 	VstInt32 VstPlug::getVendorVersion()
 	{
 		return 1337;
+	}
+
+	void VstPlug::getEffectBuildNumberString(char* buildNumber)
+	{
+		sprintf(buildNumber, "build %d", VstVersion::getCoreBuildNumber());
 	}
 
 	VstInt32 VstPlug::canDo(char *text)

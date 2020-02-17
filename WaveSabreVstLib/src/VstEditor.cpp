@@ -86,7 +86,8 @@ namespace WaveSabreVstLib
 		// WaveSabre name and build
 		const int build_label_width = 110;
 		char build_label_text[256];
-		sprintf_s(build_label_text, 256, "build %d", VstVersion::getBuildNumber());
+		build_label_text[0] = 0;
+		((VstPlug*)effect)->getEffectBuildNumberString(build_label_text);
 		CTextLabel* brand_label = addTextLabel(LeftMargin, BuildVersionTopMargin, build_label_width, BaseSize, "Wave Sabre#Inque", kNormalFont, kLeftText);
 		brand_label->setBackColor(VSTGUI::kGreyCColor);
 		brand_label->setFrameColor(VSTGUI::kGreyCColor);

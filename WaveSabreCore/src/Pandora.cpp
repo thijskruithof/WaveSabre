@@ -3,8 +3,87 @@
 
 #include <math.h>
 
+#define M_PI 3.14159265358979323846f
+#define M_2_PI 2.0f*3.14159265358979323846f
+#define M_PI_2 0.5f*3.14159265358979323846f
+#define M_PI_4 0.25f*3.14159265358979323846f
+
 namespace WaveSabreCore
 {
+	static int gPandoraRandSeed = 1;
+
+	// Returns a random float in -1..1
+	static float gPandoraRandFloat()
+	{
+		gPandoraRandSeed *= 16807;
+		return ((float)gPandoraRandSeed) / (float)0x80000000;
+	}
+
+	// Returns a random float in 0..1
+	static float gPandoraRandFloatNormalized()
+	{
+		return gPandoraRandFloat() * 0.5f + 0.5f;
+	}
+
+
+	// calculate two amounts that together form a crossfade:
+	// - when balance =  0 --> amountA = 1, amountB = 1
+	// - when balance = -1 --> amountA = 1, amountB = 0
+	// - when balance =  1 --> amountA = 0, amountB = 1
+	static void gCrossFade(float balance, float* amountA, float* amountB)
+	{
+		*amountA = (balance >= 0) ? (1 - balance) : 1;
+		*amountB = (balance <= 0) ? (balance + 1) : 1;
+	}
+
+
+
+	// Crappy pow function,
+	// uses 1,0594630943592952645618252949463 as its base.
+	// is actually a bit faster than pow(), and gives exactly the same results.
+	static __forceinline double gPandoraFastPow(double x)
+	{
+		//
+		// power(base, exponent) = Exp(exponent * Ln(base))
+		//
+		// base = 1,0594630943592952645618252949463
+		// ln(base) = 0,057762265046662109118102676787859
+		//
+		// power = exp(x * 0,057762265046662109118102676787859);
+		//
+
+		x *= 0.057762265046662109118102676787859;
+
+		// e^x = 2^(x*log2(e))   
+
+
+		__asm
+		{
+			FLD[x]
+			FLDL2E              // y := x*log2e
+			FMUL
+			FLD		ST(0)       // i := round(y)
+			FRNDINT
+			FSUB    ST(1), ST   // f := y - i  --> f = fraction of x
+			FXCH    ST(1)       // z := 2^f          
+			F2XM1
+			FLD1
+			FADD
+			FSCALE              // result := z * 2^i
+			FSTP    ST(1)
+			FSTP[x]
+		}
+
+		return x;
+	}
+
+
+#define PANDORA_VOICE_NOISE_LOOP_SIZE	1024	// in samples (44 samples ~= 1 ms)
+
+	static bool gPandoraNoiseLoopBufferInitialized = false;
+	static float gPandoraNoiseLoopBuffer[PANDORA_VOICE_NOISE_LOOP_SIZE];
+
+
 	Pandora::Pandora()
 		: SynthDevice((int)ParamIndices::NumParams)
 	{
@@ -37,10 +116,10 @@ namespace WaveSabreCore
 		lfo1positive = false;
 		lfo2positive = false;
 		lfo3positive = false;
-		envelope1 = Envelope(0.00005f, 0.00005f, 0.7f, 0.00005f);
-		envelope2 = Envelope(0.00005f, 0.00005f, 0.7f, 0.00005f);
-		envelope3 = Envelope(0.00005f, 0.00005f, 0.7f, 0.00005f);
-		envelope4 = Envelope(0.00005f, 0.00005f, 0.7f, 0.00005f);
+		envelope1 = EnvelopeSettings(0.00005f, 0.00005f, 0.7f, 0.00005f);
+		envelope2 = EnvelopeSettings(0.00005f, 0.00005f, 0.7f, 0.00005f);
+		envelope3 = EnvelopeSettings(0.00005f, 0.00005f, 0.7f, 0.00005f);
+		envelope4 = EnvelopeSettings(0.00005f, 0.00005f, 0.7f, 0.00005f);
 		vcfRouting = FilterRoutingType::NONE;
 		vcf1type = FilterType::LPF;
 		vcf1Cutoff = 0.49f;
@@ -70,6 +149,10 @@ namespace WaveSabreCore
 		arpeggioNumOctaves = 1;
 		arpeggioInterval = 16;
 		arpeggioNoteDuration = 8;
+		midiControlledSettingA = 0.0f;
+		midiControlledSettingB = 0.0f;
+		midiControlledSettingC = 0.0f;
+		midiControlledSettingD = 0.0f;
 	}
 
 
@@ -351,9 +434,232 @@ namespace WaveSabreCore
 		return 0.0f;
 	}
 
-	Pandora::PandoraVoice::PandoraVoice(Pandora* pandora)
+	void Pandora::Run(double songPosition, float** inputs, float** outputs, int numSamples)
+	{
+		// render our channel's LFOs
+		if (lfo1keysync == LfoSyncType::OFF)
+		{
+			lfo[0].SetRate(lfo1rate);
+			lfo[0].SetWaveform(lfo1waveform);
+			lfo[0].SetPositive(lfo1positive);
+			lfo[0].Update(numSamples);
+		}
+
+		if (lfo2keysync == LfoSyncType::OFF)
+		{
+			lfo[1].SetRate(lfo2rate);
+			lfo[1].SetWaveform(lfo2waveform);
+			lfo[1].SetPositive(lfo2positive);
+			lfo[1].Update(numSamples);
+		}
+
+		if (lfo3keysync == LfoSyncType::OFF)
+		{
+			lfo[2].SetRate(lfo3rate);
+			lfo[2].SetWaveform(lfo3waveform);
+			lfo[2].SetPositive(lfo3positive);
+			lfo[2].Update(numSamples);
+		}
+
+		SynthDevice::Run(songPosition, inputs, outputs, numSamples);
+	}
+
+
+	// LFO
+
+	Pandora::LFO::LFO()
+		: time(0), noiseFlip(false), glideSpeed(0), positive(false)
+	{
+		buffer = new float[(int)Helpers::CurrentSampleRate];
+
+		// randomize output for sample&glide
+		output = gPandoraRandFloat();
+	}
+
+	Pandora::LFO::~LFO()
+	{
+		delete[] buffer;
+	}
+
+
+	void Pandora::LFO::Update(int numSamples)
+	{
+		float* finger = buffer;
+
+
+		float numSamplesForGlide = 0.5f / rate;
+
+		for (int i = 0; i < numSamples; i++)
+		{
+			time += rate;
+
+			// normalize time to 0..1 (1 period)
+			time -= floorf(time);
+
+			switch (waveform)
+			{
+			case LfoWaveformType::SQUARE:
+				output = (time >= 0.5f) ? -1.0f : 1.0f;
+				break;
+
+			case LfoWaveformType::BISQUARE:
+			{
+				if (time < 0.25f)
+					output = 1;
+				else if (time >= 0.5f && time < 0.75f)
+					output = -1;
+				else
+					output = 0;
+			}
+			break;
+
+			case LfoWaveformType::SAW:
+				output = (float)(1 - time * 2.0);
+				break;
+
+			case LfoWaveformType::TRIANGLE:
+			{
+				if (time < 0.5)
+					output = 1 - (float)(time * 4.0);
+				else
+					output = -1 + (float)((time - 0.5) * 4.0);
+			}
+			break;
+
+			case LfoWaveformType::NOISEHOLD:
+			case LfoWaveformType::NOISEGLIDE: // no gliding yet
+				if ((!noiseFlip && (time < 0.5f)) ||
+					(noiseFlip && (time >= 0.5f)))
+				{
+					noiseFlip = !noiseFlip;
+					prevNoise = gPandoraRandFloat();
+
+					// we want to glide from "output" to "prevNoise" in 0.5 time. 
+					// since we get "rate" time per sample, we know that 0.5 time units equals 0.5 * (1 /
+					// rate) samples = 0.5 / rate
+					glideSpeed = (prevNoise - output) / numSamplesForGlide;
+				}
+
+				if (waveform == LfoWaveformType::NOISEHOLD)
+				{
+					output = prevNoise;
+				}
+				else
+				{
+					// glide from output to prevNoise. this is unrestricted! 
+					output += glideSpeed;
+				}
+
+				break;
+
+			case LfoWaveformType::SINE:
+			default:
+			{
+				// cheap sinusoidal LFO
+				// from: http://www.musicdsp.org/showArchiveComment.php?ArchiveID=167
+
+				float intermediate = time * 2.0f - 1.0f;
+
+				float absedLFOintermediate = intermediate;
+
+				if (absedLFOintermediate < 0)
+					absedLFOintermediate = -absedLFOintermediate;
+
+				output = intermediate * (1.0f - absedLFOintermediate);
+			}
+			break;
+			}
+
+			if (positive)
+				*(finger++) = 0.5f * output + 0.5f;
+			else
+				*(finger++) = output;
+		}
+	}
+
+
+	// Envelope
+
+	void Pandora::Envelope::Step(bool gate)
+	{
+		switch (stage)
+		{
+		case EnvelopeStage::ATTACK:
+		{
+			if (!gate)
+			{
+				stage = EnvelopeStage::RELEASE;
+				break;
+			}
+
+			level += settings.attackRate;
+			if (level >= 1)
+			{
+				level = 1;
+				stage = EnvelopeStage::DECAY;
+			}
+		}
+		break;
+		case EnvelopeStage::DECAY:
+		{
+			if (!gate)
+			{
+				stage = EnvelopeStage::RELEASE;
+				break;
+			}
+
+			level -= settings.decayRate;
+			if (level <= settings.sustainLevel)
+			{
+				level = settings.sustainLevel;
+				stage = EnvelopeStage::SUSTAIN;
+			}
+		}
+		break;
+		case EnvelopeStage::SUSTAIN:
+		{
+			if (!gate)
+				stage = EnvelopeStage::RELEASE;
+		}
+		break;
+		case EnvelopeStage::RELEASE:
+		{
+			if (!hasEnded)
+			{
+				level -= settings.releaseRate;
+				if (level < 0)
+				{
+					level = 0;
+					hasEnded = true;
+				}
+			}
+		}
+		break;
+		}
+	}
+
+
+	// Voice
+
+	Pandora::PandoraVoice::PandoraVoice(Pandora* pandora) :
+		envelope1(pandora->envelope1),
+		envelope2(pandora->envelope2),
+		envelope3(pandora->envelope3),
+		envelope4(pandora->envelope4)
 	{
 		this->pandora = pandora;
+
+		if (!gPandoraNoiseLoopBufferInitialized)
+		{
+			gPandoraNoiseLoopBufferInitialized = true;
+			for (int i = 0; i < PANDORA_VOICE_NOISE_LOOP_SIZE; ++i)
+				gPandoraNoiseLoopBuffer[i] = gPandoraRandFloat();
+		}
+	}
+
+	Pandora::PandoraVoice::~PandoraVoice()
+	{
+		Terminate();
 	}
 
 	SynthDevice* Pandora::PandoraVoice::SynthDevice() const
@@ -368,32 +674,930 @@ namespace WaveSabreCore
 		float leftPanScalar = Helpers::PanToScalarLeft(Pan);
 		float rightPanScalar = Helpers::PanToScalarRight(Pan);
 
+		bool should_be_on = IsOn;
+
+
+		float currentVolumeLevel = masterLevelScalar * inputVelocity;
+
+		float filteroutput, filter2output, vcaoutput;
+
+		// Determine lfo source buffers
+		LFO* lfo1, *lfo2, *lfo3;
+
+		if (hasOwnLFO[0])
+		{
+			lfo1 = lfo[0];
+			lfo1->SetWaveform(pandora->lfo1waveform);
+			lfo1->SetPositive(pandora->lfo1positive);
+
+			if (resolvedModulations.lfo1rate.IsEmpty())
+			{
+				lfo1->SetRate(pandora->lfo1rate);
+				lfo1->Update(numSamples);
+			}
+		}
+		else
+		{
+			lfo1 = &pandora->lfo[0];
+		}
+
+		if (hasOwnLFO[1])
+		{
+			lfo2 = lfo[1];
+			lfo2->SetWaveform(pandora->lfo2waveform);
+			lfo2->SetPositive(pandora->lfo2positive);
+
+			if (resolvedModulations.lfo2rate.IsEmpty())
+			{
+				lfo2->SetRate(pandora->lfo2rate);
+				lfo2->Update(numSamples);
+			}
+		}
+		else
+		{
+			lfo2 = &pandora->lfo[1];
+		}
+
+		if (hasOwnLFO[2])
+		{
+			lfo3 = lfo[2];
+			lfo3->SetWaveform(pandora->lfo3waveform);
+			lfo3->SetPositive(pandora->lfo3positive);
+
+			if (resolvedModulations.lfo3rate.IsEmpty())
+			{
+				lfo3->SetRate(pandora->lfo3rate);
+				lfo3->Update(numSamples);
+			}
+		}
+		else
+		{
+			lfo3 = &pandora->lfo[2];
+		}
+
+		float* lfoBuffer1 = lfo1->GetBuffer();
+		float* lfoBuffer2 = lfo2->GetBuffer();
+		float* lfoBuffer3 = lfo3->GetBuffer();
+
+		// filter helper variables
+		const float mq1 = cosf(powf(pandora->vcf1Resonance, 0.1f) * (float)M_PI_2);
+		const float mq1nrm = sqrtf(mq1 + 0.01f);
+		const float mq2 = cosf(powf(pandora->vcf2Resonance, 0.1f) * (float)M_PI_2);
+		const float mq2nrm = sqrtf(mq2 + 0.01f);
+
+		// calculate weights for osc and string
+		float submixWeightOsc, submixWeightString;
+		gCrossFade(pandora->oscStringMix, &submixWeightOsc, &submixWeightString);
+
+
 		for (int i = 0; i < numSamples; i++)
 		{
-			double baseNote = GetNote() + Detune;
+			//
+			// general flow:
+			// 
+			// osc1 --+
+			//        |--> filters (2 max) --> vca --> out
+			// osc2 --+
+			//
 
-			double oscInput = oscPhase / Helpers::CurrentSampleRate * 2.0 * 3.141592;
-			oscOutput = Helpers::FastSin(oscInput) * 13.25;
+			// -- update modulators --
 
-			float finalOutput = (float)oscOutput * masterLevelScalar;
-			outputs[0][i] += finalOutput * leftPanScalar;
-			outputs[1][i] += finalOutput * rightPanScalar;
+			// ENVELOPES
+			{
+				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::ENV1)
+					envelope1.Step(gate);
 
-			double freq1 = Helpers::NoteToFreq(baseNote);
-			oscPhase += freq1;
+				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::ENV2)
+					envelope2.Step(gate);
+
+				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::ENV3)
+					envelope3.Step(gate);
+
+				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::ENV4)
+					envelope4.Step(gate);
+			}
+
+			// LFOs
+			{
+				// LFO1
+				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::LFO1)
+				{
+					// LFO1 RATE MODULATION
+					if (!resolvedModulations.lfo1rate.IsEmpty())
+					{
+						float modulation = 0.0f;
+
+						for (int i = 0; i < resolvedModulations.lfo1rate.Size(); ++i)
+							modulation +=
+							(*resolvedModulations.lfo1rate[i].resolvedDepth) *
+							(*resolvedModulations.lfo1rate[i].resolvedSource);
+
+						lfo1->SetRate(pandora->lfo1rate * powf(10000000.0f, modulation));
+						lfo1->Update(1);
+					}
+
+					currentLfo1Amount = *lfoBuffer1;
+
+					if (resolvedModulations.lfo1rate.IsEmpty())
+					{
+						++lfoBuffer1;
+					}
+				}
+
+				// LFO2
+				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::LFO2)
+				{
+					// LFO2 RATE MODULATION
+					if (!resolvedModulations.lfo2rate.IsEmpty())
+					{
+						float modulation = 0.0f;
+
+						for (int i = 0; i < resolvedModulations.lfo2rate.Size(); ++i)
+							modulation +=
+							(*resolvedModulations.lfo2rate[i].resolvedDepth) *
+							(*resolvedModulations.lfo2rate[i].resolvedSource);
+
+						lfo2->SetRate(pandora->lfo2rate * powf(10000000.0f, modulation));
+						lfo2->Update(1);
+					}
+
+					currentLfo2Amount = *lfoBuffer2;
+
+					if (resolvedModulations.lfo2rate.IsEmpty())
+					{
+						++lfoBuffer2;
+					}
+				}
+
+				// LFO3
+				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::LFO3)
+				{
+					// LFO3 RATE MODULATION
+					if (!resolvedModulations.lfo3rate.IsEmpty())
+					{
+						float modulation = 0.0f;
+
+						for (int i = 0; i < resolvedModulations.lfo3rate.Size(); ++i)
+							modulation +=
+							(*resolvedModulations.lfo3rate[i].resolvedDepth) *
+							(*resolvedModulations.lfo3rate[i].resolvedSource);
+
+						lfo3->SetRate(pandora->lfo3rate * powf(10000000.0f, modulation));
+						lfo3->Update(1);
+					}
+
+					currentLfo3Amount = *lfoBuffer3;
+
+					if (resolvedModulations.lfo3rate.IsEmpty())
+					{
+						++lfoBuffer3;
+					}
+				}
+			}
+
+			// Modulated modulation depth
+			UpdateModulatedModulationDepth(0, resolvedModulations.modDepthA);
+			UpdateModulatedModulationDepth(1, resolvedModulations.modDepthB);
+			UpdateModulatedModulationDepth(2, resolvedModulations.modDepthC);
+			UpdateModulatedModulationDepth(3, resolvedModulations.modDepthD);
+
+			// -- update modulation consumers --
+
+			// OSC 1
+			{
+				float pulseWidth = pandora->osc1pulseWidth;
+
+				// OSC1 PULSEWIDTH MODULATION
+				{
+					if (!resolvedModulations.osc1pulseWidth.IsEmpty())
+					{
+						for (int i = 0; i < resolvedModulations.osc1pulseWidth.Size(); ++i)
+							pulseWidth +=
+							(*resolvedModulations.osc1pulseWidth[i].resolvedDepth) *
+							(*resolvedModulations.osc1pulseWidth[i].resolvedSource);
+					}
+				}
+
+				osc1level = SampleOscillator(osc1time, pandora->osc1waveform, pulseWidth);
+			}
+
+			// OSC1 LEVEL MODULATION
+			{
+				if (!resolvedModulations.osc1level.IsEmpty())
+				{
+					float modulation = 0;
+
+					for (int i = 0; i < resolvedModulations.osc1level.Size(); ++i)
+						modulation +=
+						(*resolvedModulations.osc1level[i].resolvedDepth) *
+						(*resolvedModulations.osc1level[i].resolvedSource);
+
+					osc1level *= modulation;
+				}
+			}
+
+			// OSC MIXER
+			float submix = pandora->mixAmountOsc1 * osc1level;
+
+			if (pandora->osc2waveform != OscWaveformType::OFF)
+			{
+				// OSC 2
+				{
+					float pulseWidth = pandora->osc2pulseWidth;
+
+					// OSC2 PULSEWIDTH MODULATION
+					{
+						if (!resolvedModulations.osc2pulseWidth.IsEmpty())
+						{
+							for (int i = 0; i < resolvedModulations.osc2pulseWidth.Size(); ++i)
+								pulseWidth +=
+								(*resolvedModulations.osc2pulseWidth[i].resolvedDepth) *
+								(*resolvedModulations.osc2pulseWidth[i].resolvedSource);
+						}
+					}
+
+					osc2level = SampleOscillator(osc2time, pandora->osc2waveform, pulseWidth);
+				}
+
+				// OSC2 LEVEL MODULATION
+				{
+					if (!resolvedModulations.osc2level.IsEmpty())
+					{
+						float modulation = 0;
+
+						for (int i = 0; i < resolvedModulations.osc2level.Size(); ++i)
+							modulation +=
+							(*resolvedModulations.osc2level[i].resolvedDepth) *
+							(*resolvedModulations.osc2level[i].resolvedSource);
+
+						osc2level *= modulation;
+					}
+				}
+
+				submix += pandora->mixAmountOsc2 * osc2level;
+			}
+
+			if (pandora->osc3waveform != OscWaveformType::OFF)
+			{
+				// OSC 3
+				{
+					float pulseWidth = pandora->osc3pulseWidth;
+
+					// OSC3 PULSEWIDTH MODULATION
+					{
+						if (!resolvedModulations.osc3pulseWidth.IsEmpty())
+						{
+							for (int i = 0; i < resolvedModulations.osc3pulseWidth.Size(); ++i)
+								pulseWidth +=
+								(*resolvedModulations.osc3pulseWidth[i].resolvedDepth) *
+								(*resolvedModulations.osc3pulseWidth[i].resolvedSource);
+						}
+					}
+
+					osc3level = SampleOscillator(osc3time, pandora->osc3waveform, pulseWidth);
+				}
+
+				// OSC3 LEVEL MODULATION
+				{
+					if (!resolvedModulations.osc3level.IsEmpty())
+					{
+						float modulation = 0;
+
+						for (int i = 0; i < resolvedModulations.osc3level.Size(); ++i)
+							modulation +=
+							(*resolvedModulations.osc3level[i].resolvedDepth) *
+							(*resolvedModulations.osc3level[i].resolvedSource);
+
+						osc3level *= modulation;
+					}
+				}
+
+				submix += pandora->mixAmountOsc3 * osc3level;
+			}
+
+			// STRING
+			float stringLevelModulation = submixWeightString * pandora->stringLevel;
+
+			if (stringLevelModulation > 0)
+			{
+				// STRING LEVEL MODULATION
+				{
+					if (!resolvedModulations.stringLevel.IsEmpty())
+					{
+						for (int i = 0; i < resolvedModulations.stringLevel.Size(); ++i)
+							stringLevelModulation *=
+							(*resolvedModulations.stringLevel[i].resolvedDepth) *
+							(*resolvedModulations.stringLevel[i].resolvedSource);
+					}
+				}
+			}
+
+			bool enableString = (stringLevelModulation > 0.0f);
+
+			// FILTERING
+			{
+				if (pandora->vcfRouting != FilterRoutingType::NONE)
+				{
+					float vcf1cutoff;
+
+					// FILTER 1
+					{
+						// cutoff should be (0, 1]
+						vcf1cutoff = pandora->vcf1Cutoff;
+						float resonance = pandora->vcf1Resonance;
+
+						// VCF1 CUTOFF MODULATION
+						{
+							if (!resolvedModulations.vcf1cutoff.IsEmpty())
+							{
+								float modulation = 0;
+
+								for (int i = 0; i < resolvedModulations.vcf1cutoff.Size(); ++i)
+									modulation +=
+									(*resolvedModulations.vcf1cutoff[i].resolvedDepth) *
+									(*resolvedModulations.vcf1cutoff[i].resolvedSource);
+
+								vcf1cutoff += modulation;
+							}
+						}
+
+						// VCF1 RESO MODULATION
+						{
+							if (!resolvedModulations.vcf1resonance.IsEmpty())
+							{
+								float modulation = 0;
+
+								for (int i = 0; i < resolvedModulations.vcf1resonance.Size(); ++i)
+									modulation +=
+									(*resolvedModulations.vcf1resonance[i].resolvedDepth) *
+									(*resolvedModulations.vcf1resonance[i].resolvedSource);
+
+								resonance += modulation;
+							}
+						}
+
+
+						if (vcf1cutoff > 0.7f)
+							vcf1cutoff = 0.7f;
+						else if (vcf1cutoff < 0.002f)
+							vcf1cutoff = 0.002f;
+
+						float mf = 2.0f * sinf(M_PI_4 * vcf1cutoff);
+
+						float filter1high = submix * mq1nrm - filter1low - resonance * filter1band;
+						filter1band += mf * filter1high;
+						filter1low += mf * filter1band;
+
+						switch (pandora->vcf1type)
+						{
+						case FilterType::LPF:
+							filteroutput = filter1low;
+							break;
+						case FilterType::BPF:
+							filteroutput = filter1band;
+							break;
+						case FilterType::HPF:
+							filteroutput = filter1high;
+							break;
+						case FilterType::ALLPASS:
+							filteroutput = filter1low - filter1high;
+							break;
+						case FilterType::NOTCH:
+							filteroutput = filter1low + filter1high;
+							break;
+						}
+					}
+
+					//// FILTER DISTORTION
+					//if (pandora->doFilterDist)
+					//{
+					//	float resultL;
+
+					//	filterDistortion.drive = pandora->filterDistDrive;
+					//	filterDistortion.shape = pandora->filterDistShape;
+					//	filterDistortion.onlySoftClip = pandora->filterDistPassive;
+
+					//	// Hook up quite inefficient distortion...
+					//	filterDistortion.RenderToBuffer(1, &filteroutput, &resultL);
+
+					//	filteroutput = resultL;
+					//}
+
+
+					if ((int)pandora->vcfRouting > (int)FilterRoutingType::SINGLE)
+					{
+						float filterInput;
+
+						if (pandora->vcfRouting == FilterRoutingType::SERIAL)
+						{
+							filterInput = filteroutput;
+
+							//// Render our string with the result of the first filter and add it to the input of our second filter!
+							//if (enableString)
+							//	filterInput = filterInput * submixWeightOsc + stringHelper.RenderSample(filteroutput) * stringLevelModulation;
+						}
+						else
+						{
+							filterInput = submix;
+						}
+
+						// FILTER 2
+						{
+							// cutoff should be (0, 1]
+							float cutoff = pandora->vcf2Cutoff;
+							float resonance = pandora->vcf2Resonance;
+
+							// use relative cutoff ?
+							if (pandora->vcf2CutoffRelative)
+							{
+								cutoff += vcf1cutoff;
+							}
+
+
+							// VCF2 CUTOFF MODULATION
+							{
+								if (!resolvedModulations.vcf2cutoff.IsEmpty())
+								{
+									float modulation = 0;
+
+									for (int i = 0; i < resolvedModulations.vcf2cutoff.Size(); ++i)
+										modulation +=
+										(*resolvedModulations.vcf2cutoff[i].resolvedDepth) *
+										(*resolvedModulations.vcf2cutoff[i].resolvedSource);
+
+									cutoff += modulation;
+								}
+							}
+
+							// VCF2 RESO MODULATION
+							{
+								if (!resolvedModulations.vcf2resonance.IsEmpty())
+								{
+									float modulation = 0;
+
+									for (int i = 0; i < resolvedModulations.vcf2resonance.Size(); ++i)
+										modulation +=
+										(*resolvedModulations.vcf2resonance[i].resolvedDepth) *
+										(*resolvedModulations.vcf2resonance[i].resolvedSource);
+
+									resonance += modulation;
+								}
+							}
+
+
+							if (cutoff > 0.7f)
+								cutoff = 0.7f;
+							else if (cutoff < 0.002f)
+								cutoff = 0.002f;
+
+
+							float mf = 2.0f * sinf(M_PI_4 * cutoff);
+
+							float filter2high = filterInput * mq2nrm - filter2low - resonance * filter2band;
+							filter2band += mf * filter2high;
+							filter2low += mf * filter2band;
+
+							switch (pandora->vcf2type)
+							{
+							case FilterType::LPF:
+								filter2output = filter2low;
+								break;
+							case FilterType::BPF:
+								filter2output = filter2band;
+								break;
+							case FilterType::HPF:
+								filter2output = filter2high;
+								break;
+							case FilterType::ALLPASS:
+								filter2output = filter2low - filter2high;
+								break;
+							case FilterType::NOTCH:
+								filter2output = filter2low + filter2high;
+								break;
+							}
+						}
+
+						if (pandora->vcfRouting == FilterRoutingType::SERIAL)
+						{
+							filteroutput = filter2output;
+						}
+						else
+						{
+							filteroutput = pandora->vcf1amountParallel * filteroutput +
+								pandora->vcf2amountParallel * filter2output;
+						}
+					}
+
+
+				}
+				else // no filters at all
+				{
+					filteroutput = submix;
+				}
+			}
+
+			// Render string with results from filters (either none, just one, or two in parallel)
+			//if (enableString && pandora->vcfRouting != FilterRoutingType::SERIAL)
+			//	filteroutput = filteroutput * submixWeightOsc + stringHelper.RenderSample(filteroutput) * stringLevelModulation;
+
+			// VCA
+			{
+				vcaoutput = filteroutput;
+				vcaLevel = 0;
+
+				// VCA MODULATION
+				{
+					if (!resolvedModulations.vca.IsEmpty())
+					{
+						vcaLevel = 0;
+
+						for (int i=0; i< resolvedModulations.vca.Size(); ++i)
+							vcaLevel += 
+							(*resolvedModulations.vca[i].resolvedDepth) *
+							(*resolvedModulations.vca[i].resolvedSource);
+
+						vcaoutput *= vcaLevel;
+					}
+				}
+			}
+
+			double osc1timeModifier = 1, osc2timeModifier = 1, osc3timeModifier = 1;
+
+			// OSC1 TUNE MODULATION
+			{
+				if (!resolvedModulations.osc1tune.IsEmpty())
+				{
+					float modulation = 0;
+
+					for (int i = 0; i < resolvedModulations.osc1tune.Size(); ++i)
+						modulation +=
+						(*resolvedModulations.osc1tune[i].resolvedDepth) *
+						(*resolvedModulations.osc1tune[i].resolvedSource);
+
+					osc1timeModifier *= gPandoraFastPow(modulation);
+				}
+			}
+
+			// OSC2 TUNE MODULATION
+			{
+				if (!resolvedModulations.osc2tune.IsEmpty())
+				{
+					float modulation = 0;
+
+					for (int i = 0; i < resolvedModulations.osc2tune.Size(); ++i)
+						modulation +=
+						(*resolvedModulations.osc2tune[i].resolvedDepth) *
+						(*resolvedModulations.osc2tune[i].resolvedSource);
+
+					osc2timeModifier *= gPandoraFastPow(modulation);
+				}
+			}
+
+			// OSC3 TUNE MODULATION
+			{
+				if (!resolvedModulations.osc3tune.IsEmpty())
+				{
+					float modulation = 0;
+
+					for (int i = 0; i < resolvedModulations.osc3tune.Size(); ++i)
+						modulation +=
+						(*resolvedModulations.osc3tune[i].resolvedDepth) *
+						(*resolvedModulations.osc3tune[i].resolvedSource);
+
+					osc3timeModifier *= gPandoraFastPow(modulation);
+				}
+			}
+
+			// OUTPUT SAMPLES
+			outputs[0][i] += currentVolumeLevel * vcaoutput * leftPanScalar; // left
+			outputs[1][i] += currentVolumeLevel * vcaoutput * rightPanScalar; // right
+
+			// note sliding
+			double slideScalar1 = 1.0;/* + slideInitialModifierOsc1 * slideAmount;*/
+			double slideScalar2 = 1.0;/* + slideInitialModifierOsc2 * slideAmount;*/
+			double slideScalar3 = 1.0;/* + slideInitialModifierOsc3 * slideAmount;*/
+
+			// increment time
+			osc1time += max(osc1timestep * osc1timeModifier * slideScalar1, 0);
+			osc2time += max(osc2timestep * osc2timeModifier * slideScalar2, 0);
+			osc3time += max(osc3timestep * osc3timeModifier * slideScalar3, 0);
+
+			// sync osc2?
+			if (osc1time >= 1.0f && pandora->osc2sync)
+			{
+				osc2time = 0;
+			}
+			else
+			{
+				osc2time -= floorf((float)osc2time);
+			}
+
+			// wrap to -1..1 range
+			osc1time -= floorf((float)osc1time);
+			osc3time -= floorf((float)osc3time);
+
+			//slideAmount *= linkedPatch->slideSpeed;
+
+			//slideAmount *= pandora->slideSpeed;
+			if (should_be_on && !gate && vcaLevel <= 0.001f)
+				should_be_on = false;
 		}
+
+		if (!should_be_on)
+			Terminate();
 	}
 
 	void Pandora::PandoraVoice::NoteOn(int note, int velocity, float detune, float pan)
 	{
 		Voice::NoteOn(note, velocity, detune, pan);
 
-		oscPhase = (double)Helpers::RandFloat();
-		oscOutput = 0.0;
+		const PandoraVoice* slideFrom = NULL; //< Support later?
+
+		gate = true;
+		inputVelocity = (float)velocity / 127.0f;
+		filter1low = 0.0f;
+		filter1band = 0.0f;
+		filter2low = 0.0f;
+		filter2band = 0.0f;
+		osc1level = 0.0f;
+		osc2level = 0.0f;
+		osc3level = 0.0f;
+		vcaLevel = 1.0f;
+		currentLfo1Amount = 0;
+		currentLfo2Amount = 0;
+		currentLfo3Amount = 0;
+
+		double factor = (410.96047696981869831451220512851 / (double)Helpers::CurrentSampleRate) / M_2_PI;
+		factor /= 100.0f; // magic scaling function
+
+		osc1timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc1baseToneTranspose + pandora->osc1finetune) + detune);
+		osc2timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc2baseToneTranspose + pandora->osc2finetune) + detune);
+		osc3timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc3baseToneTranspose + pandora->osc3finetune) + detune);
+
+		for (int i = 0; i < 4; ++i)
+			modulatedModulationDepth[i] = 0.0f;
+
+		// start with a random time
+		osc1time = (double)gPandoraRandFloatNormalized();
+		osc2time = (double)gPandoraRandFloatNormalized();
+		osc3time = (double)gPandoraRandFloatNormalized();
+
+		noiseLoopOffset = (int)floorf(gPandoraRandFloatNormalized() * (float)PANDORA_VOICE_NOISE_LOOP_SIZE);
+
+		ResolveAllModulations();
+
+		// Init some LFO's
+		hasOwnLFO[0] = (pandora->lfo1keysync != LfoSyncType::OFF) || (resolvedModulations.lfo1rate.Size() > 0);
+		hasOwnLFO[1] = (pandora->lfo2keysync != LfoSyncType::OFF) || (resolvedModulations.lfo2rate.Size() > 0);
+		hasOwnLFO[2] = (pandora->lfo3keysync != LfoSyncType::OFF) || (resolvedModulations.lfo3rate.Size() > 0);
+
+		lfo[0] = NULL;
+		lfo[1] = NULL;
+		lfo[2] = NULL;
+
+		if (hasOwnLFO[0])
+		{
+			lfo[0] = new LFO();
+
+			if (pandora->lfo1keysync == LfoSyncType::OFF)
+				lfo[0]->SyncTo(&pandora->lfo[0]);
+			//else if (pandora->lfo1keysync == LfoSyncType::GATE && slideFrom != NULL)
+			//	lfo[0]->SyncTo((slideFrom->lfo[0] != NULL) ? slideFrom->lfo[0] : ownerChannel->GetLFO(0));
+		}
+
+		if (hasOwnLFO[1])
+		{
+			lfo[1] = new LFO();
+
+			if (pandora->lfo2keysync == LfoSyncType::OFF)
+				lfo[1]->SyncTo(&pandora->lfo[1]);
+			//else if (pandora->lfo2keysync == Patch::PANDORA_PATCH_LFOSYNC_GATE && slideFrom != NULL)
+			//	lfo[1]->SyncTo((slideFrom->lfo[1] != NULL) ? slideFrom->lfo[1] : ownerChannel->GetLFO(1));
+		}
+
+		if (hasOwnLFO[2])
+		{
+			lfo[2] = new LFO();
+
+			if (pandora->lfo3keysync == LfoSyncType::OFF)
+				lfo[2]->SyncTo(&pandora->lfo[2]);
+			//else if (pandora->lfo3keysync == Patch::PANDORA_PATCH_LFOSYNC_GATE && slideFrom != NULL)
+			//	lfo[2]->SyncTo((slideFrom->lfo[2] != NULL) ? slideFrom->lfo[2] : ownerChannel->GetLFO(2));
+		}
+
+
+		// Pluck our string.
+		//stringHelper.SetTimeStep(osc1timestep);
+		//stringHelper.Pluck(inputVelocity);
+
+		// Init filterdistortion filter
+		//filterDistortion.filter.cutoff = 1.0f;
+		//filterDistortion.filter.resonance = 1.0f;
+		//filterDistortion.filter.UpdateCoeffs();
 	}
 
 	void Pandora::PandoraVoice::NoteOff()
 	{
-		IsOn = false;
+		gate = false;
 	}
-}
+
+
+	void Pandora::PandoraVoice::Terminate()
+	{
+		if (!IsOn)
+			return;
+
+		IsOn = false;
+		delete lfo[0];
+		delete lfo[1];
+		delete lfo[2];
+	}
+
+	void Pandora::PandoraVoice::ResolveModulations(
+		FixedSizeList<Pandora::ResolvedModulationType>& dest,
+		FixedSizeList<Pandora::UnresolvedModulationType>& src)
+	{
+		for (int i = 0; i < src.Size(); ++i)
+		{
+			UnresolvedModulationType& srcMod = src[i];
+			ResolvedModulationType resMod;
+
+			// resolve depth to either constant or modulated float
+			if (srcMod.depthSource < 0)
+			{
+				resMod.resolvedDepth = &srcMod.depth;
+			}
+			else
+			{
+				ASSERT(srcMod.depthSource < sizeof(modulatedModulationDepth) / sizeof(float));
+				resMod.resolvedDepth = &modulatedModulationDepth[srcMod.depthSource];
+			}
+
+			// resolve source to correct provider
+			switch (srcMod.source)
+			{
+			case ModulationSourceType::ENV1:
+				resMod.resolvedSource = envelope1.GetLevelPtr();
+				break;
+			case ModulationSourceType::ENV2:
+				resMod.resolvedSource = envelope2.GetLevelPtr();
+				break;
+			case ModulationSourceType::ENV3:
+				resMod.resolvedSource = envelope3.GetLevelPtr();
+				break;
+			case ModulationSourceType::ENV4:
+				resMod.resolvedSource = envelope4.GetLevelPtr();
+				break;
+			case ModulationSourceType::LFO1:
+				resMod.resolvedSource = &currentLfo1Amount;
+				break;
+			case ModulationSourceType::LFO2:
+				resMod.resolvedSource = &currentLfo2Amount;
+				break;
+			case ModulationSourceType::LFO3:
+				resMod.resolvedSource = &currentLfo3Amount;
+				break;
+			case ModulationSourceType::OSC1:
+				resMod.resolvedSource = &osc1level;
+				break;
+			case ModulationSourceType::OSC2:
+				resMod.resolvedSource = &osc2level;
+				break;
+			case ModulationSourceType::OSC3:
+				resMod.resolvedSource = &osc3level;
+				break;
+			case ModulationSourceType::MIDICTRL_A:
+				resMod.resolvedSource = &pandora->midiControlledSettingA;
+				break;
+			case ModulationSourceType::MIDICTRL_B:
+				resMod.resolvedSource = &pandora->midiControlledSettingB;
+				break;
+			case ModulationSourceType::MIDICTRL_C:
+				resMod.resolvedSource = &pandora->midiControlledSettingC;
+				break;
+			case ModulationSourceType::MIDICTRL_D:
+				resMod.resolvedSource = &pandora->midiControlledSettingD;
+				break;
+			default:			
+				ASSERT_MSG(false, "Unknown modulation source found. Smells like a case of bad coding!");
+				break;
+			}
+
+			dest.Add(resMod);
+		}
+	}
+
+	void Pandora::PandoraVoice::ResolveAllModulations()
+	{
+		ResolveModulations(resolvedModulations.osc1tune, pandora->modulations.osc1tune);
+		ResolveModulations(resolvedModulations.osc2tune, pandora->modulations.osc2tune);
+		ResolveModulations(resolvedModulations.osc3tune, pandora->modulations.osc3tune);
+
+		ResolveModulations(resolvedModulations.vcf1cutoff, pandora->modulations.vcf1cutoff);
+		ResolveModulations(resolvedModulations.vcf1resonance, pandora->modulations.vcf1resonance);
+		ResolveModulations(resolvedModulations.vcf2cutoff, pandora->modulations.vcf2cutoff);
+		ResolveModulations(resolvedModulations.vcf2resonance, pandora->modulations.vcf2resonance);
+		ResolveModulations(resolvedModulations.vca, pandora->modulations.vca);
+
+		ResolveModulations(resolvedModulations.osc1pulseWidth, pandora->modulations.osc1pulseWidth);
+		ResolveModulations(resolvedModulations.osc2pulseWidth, pandora->modulations.osc2pulseWidth);
+		ResolveModulations(resolvedModulations.osc3pulseWidth, pandora->modulations.osc3pulseWidth);
+
+		ResolveModulations(resolvedModulations.modDepthA, pandora->modulations.modDepthA);
+		ResolveModulations(resolvedModulations.modDepthB, pandora->modulations.modDepthB);
+		ResolveModulations(resolvedModulations.modDepthC, pandora->modulations.modDepthC);
+		ResolveModulations(resolvedModulations.modDepthD, pandora->modulations.modDepthD);
+
+		ResolveModulations(resolvedModulations.osc1level, pandora->modulations.osc1level);
+		ResolveModulations(resolvedModulations.osc2level, pandora->modulations.osc2level);
+		ResolveModulations(resolvedModulations.osc3level, pandora->modulations.osc3level);
+
+		ResolveModulations(resolvedModulations.stringLevel, pandora->modulations.stringLevel);
+
+		ResolveModulations(resolvedModulations.lfo1rate, pandora->modulations.lfo1rate);
+		ResolveModulations(resolvedModulations.lfo2rate, pandora->modulations.lfo2rate);
+		ResolveModulations(resolvedModulations.lfo3rate, pandora->modulations.lfo3rate);
+
+		resolvedModulations.usedSourcesMask = pandora->modulations.usedSourcesMask;
+	}
+
+	void Pandora::PandoraVoice::UpdateModulatedModulationDepth(int index, const FixedSizeList<Pandora::ResolvedModulationType>& modulationSourceList)
+	{
+		float modulation = 1;
+
+		for (int i = 0; i < modulationSourceList.Size(); ++i)
+			modulation *=
+			(*modulationSourceList[i].resolvedDepth) *
+			(*modulationSourceList[i].resolvedSource);
+
+		modulatedModulationDepth[index] = modulation;
+	}
+
+
+	__inline float Pandora::PandoraVoice::SampleOscillator(double time, OscWaveformType waveform, float pulseWidth)
+	{
+		static int noiseSeed = 1;
+
+		double origTime = time;
+
+		// Remap time
+		float t2 = 0.5f * pulseWidth + 0.5f;
+
+		if (time < t2)
+		{
+			time = (time / t2) * 0.5f;
+		}
+		else
+		{
+			time = 0.5f + ((time - t2) / (1 - t2)) * 0.5f;
+		}
+
+
+		switch (waveform)
+		{
+		case OscWaveformType::SINE:
+			return sinf((float)time * 6.283185307179586476925286766559f);
+
+		case OscWaveformType::SQUARE:
+			return (time >= 0.5) ? -1.0f : 1.0f;
+
+		case OscWaveformType::BISQUARE:
+		{
+			double w = 0.25 * (pulseWidth + 1);
+
+			if (origTime < w)
+				return 1;
+			else if (origTime >= 0.5 && origTime < 0.5 + w)
+				return -1;
+			else
+				return 0;
+
+		}
+
+		case OscWaveformType::SAW:
+			return (float)((time * 2.0) - 1);
+
+		case OscWaveformType::TRIANGLE:
+		{
+			if (time < 0.5)
+				return 1 - (float)(time * 4.0);
+			else
+				return -1 + (float)((time - 0.5) * 4.0);
+		}
+		break;
+
+		case OscWaveformType::NOISE:
+			return gPandoraRandFloat();
+			break;
+
+		case OscWaveformType::NOISE_LOOP:
+			noiseLoopOffset = (noiseLoopOffset + 1) % PANDORA_VOICE_NOISE_LOOP_SIZE;
+			return gPandoraNoiseLoopBuffer[noiseLoopOffset];
+
+		default:
+		case OscWaveformType::OFF:
+			return 0;
+		}
+	}
+
+} // namespace WaveSabreCore
