@@ -336,7 +336,6 @@ namespace WaveSabreCore
 		float slideSpeed; // special multiplier factor (~0.9995 is nice)
 
 		// Unison:
-		int numUnisonVoices;
 		float unisonSpread; // in semi-tones
 
 		// Arpeggio:

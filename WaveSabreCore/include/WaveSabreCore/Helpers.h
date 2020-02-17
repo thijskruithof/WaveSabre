@@ -42,6 +42,10 @@ namespace WaveSabreCore
 		static float Mix(float v1, float v2, float mix);
 		static int Clamp(int v, int min, int max);
 		static float Clamp(float f, float min, float max);
+		static float Min(float a, float b);
+		static double Min(double a, double b);
+		static float Max(float a, float b);
+		static double Max(double a, double b);
 
 		static float DbToScalar(float db);
 

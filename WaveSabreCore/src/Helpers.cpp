@@ -217,6 +217,26 @@ namespace WaveSabreCore
 		return f;
 	}
 
+	float Helpers::Min(float a, float b)
+	{
+		return (a < b) ? a : b;
+	}
+
+	float Helpers::Max(float a, float b)
+	{
+		return (a > b) ? a : b;
+	}
+
+	double Helpers::Min(double a, double b)
+	{
+		return (a < b) ? a : b;
+	}
+
+	double Helpers::Max(double a, double b)
+	{
+		return (a > b) ? a : b;
+	}
+
 	double Helpers::NoteToFreq(double note)
 	{
 		return 440.0 * Pow(2.0, (note - 69.0) / 12.0);

@@ -143,7 +143,6 @@ namespace WaveSabreCore
 		filterDistDrive = 0.0f;
 		filterDistShape = 0.0f;
 		osc2sync = false;
-		numUnisonVoices = 1;
 		unisonSpread = 0.05f;
 		arpeggioType = ArpeggioType::OFF;
 		arpeggioNumOctaves = 1;
@@ -342,7 +341,7 @@ namespace WaveSabreCore
 		case ParamIndices::FilterDistShape:				filterDistShape = value; break;
 		case ParamIndices::DoSlide:						doSlide = Helpers::ParamToBoolean(value); break;
 		case ParamIndices::SlideSpeed:					slideSpeed = sSlideLinearToExponential(value); break;
-		case ParamIndices::NumUnisonVoices:				numUnisonVoices = sNumUnisonVoicesLinearToExponential(value);  break;
+		case ParamIndices::NumUnisonVoices:				VoicesUnisono = sNumUnisonVoicesLinearToExponential(value);  break;
 		case ParamIndices::UnisonSpread:				unisonSpread = Helpers::ParamToRangedFloat(value, 0.0f, 0.5f); break;
 		case ParamIndices::ArpeggioType:				arpeggioType = Helpers::ParamToEnum<ArpeggioType>(value); break;
 		case ParamIndices::ArpeggioNumOctaves:			arpeggioNumOctaves = Helpers::ParamToRangedInt(value, 1, 8); break;
@@ -423,7 +422,7 @@ namespace WaveSabreCore
 		case ParamIndices::FilterDistShape:				return filterDistShape;
 		case ParamIndices::DoSlide:						return Helpers::BooleanToParam(doSlide);
 		case ParamIndices::SlideSpeed:					return sSlideExponentialToLinear(slideSpeed);
-		case ParamIndices::NumUnisonVoices:				return sNumUnisonVoicesExponentialToLinear(numUnisonVoices);
+		case ParamIndices::NumUnisonVoices:				return sNumUnisonVoicesExponentialToLinear(VoicesUnisono);
 		case ParamIndices::UnisonSpread:				return Helpers::RangedFloatToParam(unisonSpread, 0.0f, 0.5f); 
 		case ParamIndices::ArpeggioType:				return Helpers::EnumToParam<ArpeggioType>(arpeggioType);
 		case ParamIndices::ArpeggioNumOctaves:			return Helpers::RangedIntToParam(arpeggioNumOctaves, 1, 8);
@@ -1278,9 +1277,9 @@ namespace WaveSabreCore
 			double slideScalar3 = 1.0;/* + slideInitialModifierOsc3 * slideAmount;*/
 
 			// increment time
-			osc1time += max(osc1timestep * osc1timeModifier * slideScalar1, 0);
-			osc2time += max(osc2timestep * osc2timeModifier * slideScalar2, 0);
-			osc3time += max(osc3timestep * osc3timeModifier * slideScalar3, 0);
+			osc1time += Helpers::Max(osc1timestep * osc1timeModifier * slideScalar1, 0);
+			osc2time += Helpers::Max(osc2timestep * osc2timeModifier * slideScalar2, 0);
+			osc3time += Helpers::Max(osc3timestep * osc3timeModifier * slideScalar3, 0);
 
 			// sync osc2?
 			if (osc1time >= 1.0f && pandora->osc2sync)

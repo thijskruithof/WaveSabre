@@ -212,7 +212,7 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::FilterDistShape:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->filterDistShape, 2); break;
 	case Pandora::ParamIndices::DoSlide:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->doSlide); break;
 	case Pandora::ParamIndices::SlideSpeed:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->slideSpeed, 4); break;  
-	case Pandora::ParamIndices::NumUnisonVoices:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->numUnisonVoices); break;
+	case Pandora::ParamIndices::NumUnisonVoices:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->VoicesUnisono); break;
 	case Pandora::ParamIndices::UnisonSpread:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->unisonSpread, 2); break;
 	case Pandora::ParamIndices::ArpeggioType:				setParameterDisplayAndLabel(display, label, gStrArpeggioType[(int)((Pandora*)getDevice())->arpeggioType]); break;
 	case Pandora::ParamIndices::ArpeggioNumOctaves:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->arpeggioNumOctaves); break;
