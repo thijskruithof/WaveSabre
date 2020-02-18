@@ -218,6 +218,7 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::ArpeggioNumOctaves:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->arpeggioNumOctaves); break;
 	case Pandora::ParamIndices::ArpeggioInterval:			VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::ArpeggioNoteDuration:		VstPlug::getParameterDisplayAndLabel(index, display, label); break;
+	case Pandora::ParamIndices::Pan:						setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->VoicesPan, 2); break;
 	}
 }
 

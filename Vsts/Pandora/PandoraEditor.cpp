@@ -109,5 +109,10 @@ void PandoraEditor::Open()
 	addKnob((VstInt32)Pandora::ParamIndices::ArpeggioInterval, "ArpInterval");
 	addKnob((VstInt32)Pandora::ParamIndices::ArpeggioNoteDuration, "ArpNoteDur");
 
+	addSpacer();
+
+	addKnob((VstInt32)Pandora::ParamIndices::Pan, "Pan");
+
+
 	VstEditor::Open();
 }

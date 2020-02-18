@@ -109,13 +109,13 @@ namespace WaveSabreVstLib
 
 	void VstPlug::getParameterLabel(VstInt32 index, char *label)
 	{
-		char dummy[kVstMaxParamStrLen];
+		char dummy[kVstMaxParamStrLen+1];
 		getParameterDisplayAndLabel(index, dummy, label);
 	}
 
 	void VstPlug::getParameterDisplay(VstInt32 index, char *text)
 	{
-		char dummy[kVstMaxParamStrLen];
+		char dummy[kVstMaxParamStrLen+1];
 		getParameterDisplayAndLabel(index, text, dummy);
 	}
 

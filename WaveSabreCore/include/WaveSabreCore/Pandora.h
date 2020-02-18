@@ -86,6 +86,7 @@ namespace WaveSabreCore
 			ArpeggioNumOctaves,
 			ArpeggioInterval,
 			ArpeggioNoteDuration,
+			Pan,
 
 			NumParams,
 		};

@@ -152,6 +152,9 @@ namespace WaveSabreCore
 		midiControlledSettingB = 0.0f;
 		midiControlledSettingC = 0.0f;
 		midiControlledSettingD = 0.0f;
+
+
+		VoicesDetune = 1.0f; //< Always use a detune of 1, as that will give each voice a unique detune amount when unisoning. We apply proper spread in the voice.
 	}
 
 
@@ -347,6 +350,7 @@ namespace WaveSabreCore
 		case ParamIndices::ArpeggioNumOctaves:			arpeggioNumOctaves = Helpers::ParamToRangedInt(value, 1, 8); break;
 		case ParamIndices::ArpeggioInterval:			arpeggioInterval = sArpeggioIntervalLinearToExponential(value); break;
 		case ParamIndices::ArpeggioNoteDuration:		arpeggioNoteDuration = sArpeggioIntervalLinearToExponential(value); break;
+		case ParamIndices::Pan:							VoicesPan = value; break;
 		}
 	}
 
@@ -428,6 +432,7 @@ namespace WaveSabreCore
 		case ParamIndices::ArpeggioNumOctaves:			return Helpers::RangedIntToParam(arpeggioNumOctaves, 1, 8);
 		case ParamIndices::ArpeggioInterval:			return sArpeggioIntervalExponentialToLinear(arpeggioInterval);
 		case ParamIndices::ArpeggioNoteDuration:		return sArpeggioIntervalExponentialToLinear(arpeggioNoteDuration);
+		case ParamIndices::Pan:							return VoicesPan;
 		}
 
 		return 0.0f;
@@ -1314,6 +1319,7 @@ namespace WaveSabreCore
 
 		gate = true;
 		inputVelocity = (float)velocity / 127.0f;
+
 		filter1low = 0.0f;
 		filter1band = 0.0f;
 		filter2low = 0.0f;
@@ -1329,9 +1335,11 @@ namespace WaveSabreCore
 		double factor = (410.96047696981869831451220512851 / (double)Helpers::CurrentSampleRate) / M_2_PI;
 		factor /= 100.0f; // magic scaling function
 
-		osc1timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc1baseToneTranspose + pandora->osc1finetune) + detune);
-		osc2timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc2baseToneTranspose + pandora->osc2finetune) + detune);
-		osc3timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc3baseToneTranspose + pandora->osc3finetune) + detune);
+		float unisonDetune = (2.0f * detune - 1.0f) * pandora->unisonSpread;
+
+		osc1timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc1baseToneTranspose + pandora->osc1finetune) + unisonDetune);
+		osc2timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc2baseToneTranspose + pandora->osc2finetune) + unisonDetune);
+		osc3timestep = factor * powf(1.0594630943592952645618252949463f, (float)(note + pandora->osc3baseToneTranspose + pandora->osc3finetune) + unisonDetune);
 
 		for (int i = 0; i < 4; ++i)
 			modulatedModulationDepth[i] = 0.0f;
