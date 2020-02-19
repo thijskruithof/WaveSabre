@@ -261,6 +261,8 @@ namespace WaveSabreCore
 	}
 
 
+	float Pandora::sModulationDepthRangeFactor[3] = { 1.0f, 16.0f, 64.0f };
+
 
 	void Pandora::SetParam(int index, float value)
 	{
@@ -671,6 +673,24 @@ namespace WaveSabreCore
 		return pandora;
 	}
 
+	float Pandora::PandoraVoice::GetModulationAmountSummed(Pandora::ModulationDestType dest) const
+	{
+		float result = 0.0f;
+		const AllModulationsType<ResolvedModulationType>::ModulationsType& mods = resolvedModulations.modulationsPerDest[(int)dest];
+		for (int i = 0; i < mods.Size(); ++i)
+			result += (*mods[i].resolvedSource) * (*mods[i].resolvedDepth);
+		return result;
+	}
+
+	float Pandora::PandoraVoice::GetModulationAmountMultiplied(Pandora::ModulationDestType dest) const
+	{
+		float result = 1.0f;
+		const AllModulationsType<ResolvedModulationType>::ModulationsType& mods = resolvedModulations.modulationsPerDest[(int)dest];
+		for (int i = 0; i < mods.Size(); ++i)
+			result *= (*mods[i].resolvedSource) * (*mods[i].resolvedDepth);
+		return result;
+	}
+
 	void Pandora::PandoraVoice::Run(double songPosition, float** outputs, int numSamples)
 	{
 		float masterLevelScalar = Helpers::VolumeToScalar(0.8f);
@@ -694,7 +714,7 @@ namespace WaveSabreCore
 			lfo1->SetWaveform(pandora->lfo1waveform);
 			lfo1->SetPositive(pandora->lfo1positive);
 
-			if (resolvedModulations.lfo1rate.IsEmpty())
+			if (!resolvedModulations.IsAffecting(ModulationDestType::LFO1RATE))
 			{
 				lfo1->SetRate(pandora->lfo1rate);
 				lfo1->Update(numSamples);
@@ -711,7 +731,7 @@ namespace WaveSabreCore
 			lfo2->SetWaveform(pandora->lfo2waveform);
 			lfo2->SetPositive(pandora->lfo2positive);
 
-			if (resolvedModulations.lfo2rate.IsEmpty())
+			if (!resolvedModulations.IsAffecting(ModulationDestType::LFO2RATE))
 			{
 				lfo2->SetRate(pandora->lfo2rate);
 				lfo2->Update(numSamples);
@@ -728,7 +748,7 @@ namespace WaveSabreCore
 			lfo3->SetWaveform(pandora->lfo3waveform);
 			lfo3->SetPositive(pandora->lfo3positive);
 
-			if (resolvedModulations.lfo3rate.IsEmpty())
+			if (!resolvedModulations.IsAffecting(ModulationDestType::LFO3RATE))
 			{
 				lfo3->SetRate(pandora->lfo3rate);
 				lfo3->Update(numSamples);
@@ -768,136 +788,100 @@ namespace WaveSabreCore
 
 			// ENVELOPES
 			{
-				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::ENV1)
+				if (resolvedModulations.IsDependingOn(ModulationSourceType::ENV1))
 					envelope1.Step(gate);
 
-				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::ENV2)
+				if (resolvedModulations.IsDependingOn(ModulationSourceType::ENV2))
 					envelope2.Step(gate);
 
-				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::ENV3)
+				if (resolvedModulations.IsDependingOn(ModulationSourceType::ENV3))
 					envelope3.Step(gate);
 
-				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::ENV4)
+				if (resolvedModulations.IsDependingOn(ModulationSourceType::ENV4))
 					envelope4.Step(gate);
 			}
 
 			// LFOs
 			{
 				// LFO1
-				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::LFO1)
+				if (resolvedModulations.IsDependingOn(ModulationSourceType::LFO1))
 				{
 					// LFO1 RATE MODULATION
-					if (!resolvedModulations.lfo1rate.IsEmpty())
+					if (resolvedModulations.IsAffecting(ModulationDestType::LFO1RATE))
 					{
-						float modulation = 0.0f;
-
-						for (int i = 0; i < resolvedModulations.lfo1rate.Size(); ++i)
-							modulation +=
-							(*resolvedModulations.lfo1rate[i].resolvedDepth) *
-							(*resolvedModulations.lfo1rate[i].resolvedSource);
+						float modulation = GetModulationAmountSummed(ModulationDestType::LFO1RATE);
 
 						lfo1->SetRate(pandora->lfo1rate * powf(10000000.0f, modulation));
 						lfo1->Update(1);
+
+						currentLfo1Amount = *lfoBuffer1;
 					}
-
-					currentLfo1Amount = *lfoBuffer1;
-
-					if (resolvedModulations.lfo1rate.IsEmpty())
+					else
 					{
+						currentLfo1Amount = *lfoBuffer1;
 						++lfoBuffer1;
 					}
 				}
 
 				// LFO2
-				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::LFO2)
+				if (resolvedModulations.IsDependingOn(ModulationSourceType::LFO2))
 				{
 					// LFO2 RATE MODULATION
-					if (!resolvedModulations.lfo2rate.IsEmpty())
+					if (resolvedModulations.IsAffecting(ModulationDestType::LFO2RATE))
 					{
-						float modulation = 0.0f;
-
-						for (int i = 0; i < resolvedModulations.lfo2rate.Size(); ++i)
-							modulation +=
-							(*resolvedModulations.lfo2rate[i].resolvedDepth) *
-							(*resolvedModulations.lfo2rate[i].resolvedSource);
+						float modulation = GetModulationAmountSummed(ModulationDestType::LFO2RATE);
 
 						lfo2->SetRate(pandora->lfo2rate * powf(10000000.0f, modulation));
 						lfo2->Update(1);
+
+						currentLfo2Amount = *lfoBuffer2;
 					}
-
-					currentLfo2Amount = *lfoBuffer2;
-
-					if (resolvedModulations.lfo2rate.IsEmpty())
+					else
 					{
+						currentLfo2Amount = *lfoBuffer2;
 						++lfoBuffer2;
 					}
 				}
 
 				// LFO3
-				if (resolvedModulations.usedSourcesMask & (int)ModulationSourceType::LFO3)
+				if (resolvedModulations.IsDependingOn(ModulationSourceType::LFO3))
 				{
-					// LFO3 RATE MODULATION
-					if (!resolvedModulations.lfo3rate.IsEmpty())
+					// LFO2 RATE MODULATION
+					if (resolvedModulations.IsAffecting(ModulationDestType::LFO3RATE))
 					{
-						float modulation = 0.0f;
-
-						for (int i = 0; i < resolvedModulations.lfo3rate.Size(); ++i)
-							modulation +=
-							(*resolvedModulations.lfo3rate[i].resolvedDepth) *
-							(*resolvedModulations.lfo3rate[i].resolvedSource);
+						float modulation = GetModulationAmountSummed(ModulationDestType::LFO3RATE);
 
 						lfo3->SetRate(pandora->lfo3rate * powf(10000000.0f, modulation));
 						lfo3->Update(1);
+
+						currentLfo3Amount = *lfoBuffer3;
 					}
-
-					currentLfo3Amount = *lfoBuffer3;
-
-					if (resolvedModulations.lfo3rate.IsEmpty())
+					else
 					{
+						currentLfo3Amount = *lfoBuffer3;
 						++lfoBuffer3;
 					}
 				}
 			}
 
 			// Modulated modulation depth
-			UpdateModulatedModulationDepth(0, resolvedModulations.modDepthA);
-			UpdateModulatedModulationDepth(1, resolvedModulations.modDepthB);
-			UpdateModulatedModulationDepth(2, resolvedModulations.modDepthC);
-			UpdateModulatedModulationDepth(3, resolvedModulations.modDepthD);
+			modulatedModulationDepth[0] = GetModulationAmountMultiplied(ModulationDestType::MODDEPTHA);
+			modulatedModulationDepth[1] = GetModulationAmountMultiplied(ModulationDestType::MODDEPTHB);
+			modulatedModulationDepth[2] = GetModulationAmountMultiplied(ModulationDestType::MODDEPTHC);
+			modulatedModulationDepth[3] = GetModulationAmountMultiplied(ModulationDestType::MODDEPTHD);
 
 			// -- update modulation consumers --
 
 			// OSC 1
 			{
-				float pulseWidth = pandora->osc1pulseWidth;
-
-				// OSC1 PULSEWIDTH MODULATION
-				{
-					if (!resolvedModulations.osc1pulseWidth.IsEmpty())
-					{
-						for (int i = 0; i < resolvedModulations.osc1pulseWidth.Size(); ++i)
-							pulseWidth +=
-							(*resolvedModulations.osc1pulseWidth[i].resolvedDepth) *
-							(*resolvedModulations.osc1pulseWidth[i].resolvedSource);
-					}
-				}
+				float pulseWidth = pandora->osc1pulseWidth + GetModulationAmountSummed(ModulationDestType::OSC1PULSEWIDTH);
 
 				osc1level = SampleOscillator(osc1time, pandora->osc1waveform, pulseWidth);
 			}
 
 			// OSC1 LEVEL MODULATION
 			{
-				if (!resolvedModulations.osc1level.IsEmpty())
-				{
-					float modulation = 0;
-
-					for (int i = 0; i < resolvedModulations.osc1level.Size(); ++i)
-						modulation +=
-						(*resolvedModulations.osc1level[i].resolvedDepth) *
-						(*resolvedModulations.osc1level[i].resolvedSource);
-
-					osc1level *= modulation;
-				}
+				osc1level *= GetModulationAmountMultiplied(ModulationDestType::OSC1LEVEL);
 			}
 
 			// OSC MIXER
@@ -907,35 +891,14 @@ namespace WaveSabreCore
 			{
 				// OSC 2
 				{
-					float pulseWidth = pandora->osc2pulseWidth;
-
-					// OSC2 PULSEWIDTH MODULATION
-					{
-						if (!resolvedModulations.osc2pulseWidth.IsEmpty())
-						{
-							for (int i = 0; i < resolvedModulations.osc2pulseWidth.Size(); ++i)
-								pulseWidth +=
-								(*resolvedModulations.osc2pulseWidth[i].resolvedDepth) *
-								(*resolvedModulations.osc2pulseWidth[i].resolvedSource);
-						}
-					}
+					float pulseWidth = pandora->osc2pulseWidth + GetModulationAmountSummed(ModulationDestType::OSC2PULSEWIDTH);
 
 					osc2level = SampleOscillator(osc2time, pandora->osc2waveform, pulseWidth);
 				}
 
 				// OSC2 LEVEL MODULATION
 				{
-					if (!resolvedModulations.osc2level.IsEmpty())
-					{
-						float modulation = 0;
-
-						for (int i = 0; i < resolvedModulations.osc2level.Size(); ++i)
-							modulation +=
-							(*resolvedModulations.osc2level[i].resolvedDepth) *
-							(*resolvedModulations.osc2level[i].resolvedSource);
-
-						osc2level *= modulation;
-					}
+					osc2level *= GetModulationAmountMultiplied(ModulationDestType::OSC2LEVEL);
 				}
 
 				submix += pandora->mixAmountOsc2 * osc2level;
@@ -945,35 +908,14 @@ namespace WaveSabreCore
 			{
 				// OSC 3
 				{
-					float pulseWidth = pandora->osc3pulseWidth;
-
-					// OSC3 PULSEWIDTH MODULATION
-					{
-						if (!resolvedModulations.osc3pulseWidth.IsEmpty())
-						{
-							for (int i = 0; i < resolvedModulations.osc3pulseWidth.Size(); ++i)
-								pulseWidth +=
-								(*resolvedModulations.osc3pulseWidth[i].resolvedDepth) *
-								(*resolvedModulations.osc3pulseWidth[i].resolvedSource);
-						}
-					}
+					float pulseWidth = pandora->osc3pulseWidth + GetModulationAmountSummed(ModulationDestType::OSC3PULSEWIDTH);
 
 					osc3level = SampleOscillator(osc3time, pandora->osc3waveform, pulseWidth);
 				}
 
 				// OSC3 LEVEL MODULATION
 				{
-					if (!resolvedModulations.osc3level.IsEmpty())
-					{
-						float modulation = 0;
-
-						for (int i = 0; i < resolvedModulations.osc3level.Size(); ++i)
-							modulation +=
-							(*resolvedModulations.osc3level[i].resolvedDepth) *
-							(*resolvedModulations.osc3level[i].resolvedSource);
-
-						osc3level *= modulation;
-					}
+					osc3level *= GetModulationAmountMultiplied(ModulationDestType::OSC3LEVEL);
 				}
 
 				submix += pandora->mixAmountOsc3 * osc3level;
@@ -985,15 +927,7 @@ namespace WaveSabreCore
 			if (stringLevelModulation > 0)
 			{
 				// STRING LEVEL MODULATION
-				{
-					if (!resolvedModulations.stringLevel.IsEmpty())
-					{
-						for (int i = 0; i < resolvedModulations.stringLevel.Size(); ++i)
-							stringLevelModulation *=
-							(*resolvedModulations.stringLevel[i].resolvedDepth) *
-							(*resolvedModulations.stringLevel[i].resolvedSource);
-					}
-				}
+				stringLevelModulation *= GetModulationAmountMultiplied(ModulationDestType::STRINGLEVEL);
 			}
 
 			bool enableString = (stringLevelModulation > 0.0f);
@@ -1011,40 +945,12 @@ namespace WaveSabreCore
 						float resonance = pandora->vcf1Resonance;
 
 						// VCF1 CUTOFF MODULATION
-						{
-							if (!resolvedModulations.vcf1cutoff.IsEmpty())
-							{
-								float modulation = 0;
-
-								for (int i = 0; i < resolvedModulations.vcf1cutoff.Size(); ++i)
-									modulation +=
-									(*resolvedModulations.vcf1cutoff[i].resolvedDepth) *
-									(*resolvedModulations.vcf1cutoff[i].resolvedSource);
-
-								vcf1cutoff += modulation;
-							}
-						}
-
+						vcf1cutoff += GetModulationAmountSummed(ModulationDestType::VCF1CUTOFF);
+						
 						// VCF1 RESO MODULATION
-						{
-							if (!resolvedModulations.vcf1resonance.IsEmpty())
-							{
-								float modulation = 0;
+						resonance += GetModulationAmountSummed(ModulationDestType::VCF1RESONANCE);
 
-								for (int i = 0; i < resolvedModulations.vcf1resonance.Size(); ++i)
-									modulation +=
-									(*resolvedModulations.vcf1resonance[i].resolvedDepth) *
-									(*resolvedModulations.vcf1resonance[i].resolvedSource);
-
-								resonance += modulation;
-							}
-						}
-
-
-						if (vcf1cutoff > 0.7f)
-							vcf1cutoff = 0.7f;
-						else if (vcf1cutoff < 0.002f)
-							vcf1cutoff = 0.002f;
+						vcf1cutoff = Helpers::Clamp(vcf1cutoff, 0.002f, 0.7f);
 
 						float mf = 2.0f * sinf(M_PI_4 * vcf1cutoff);
 
@@ -1119,40 +1025,13 @@ namespace WaveSabreCore
 
 
 							// VCF2 CUTOFF MODULATION
-							{
-								if (!resolvedModulations.vcf2cutoff.IsEmpty())
-								{
-									float modulation = 0;
-
-									for (int i = 0; i < resolvedModulations.vcf2cutoff.Size(); ++i)
-										modulation +=
-										(*resolvedModulations.vcf2cutoff[i].resolvedDepth) *
-										(*resolvedModulations.vcf2cutoff[i].resolvedSource);
-
-									cutoff += modulation;
-								}
-							}
+							cutoff += GetModulationAmountSummed(ModulationDestType::VCF2CUTOFF);
 
 							// VCF2 RESO MODULATION
-							{
-								if (!resolvedModulations.vcf2resonance.IsEmpty())
-								{
-									float modulation = 0;
-
-									for (int i = 0; i < resolvedModulations.vcf2resonance.Size(); ++i)
-										modulation +=
-										(*resolvedModulations.vcf2resonance[i].resolvedDepth) *
-										(*resolvedModulations.vcf2resonance[i].resolvedSource);
-
-									resonance += modulation;
-								}
-							}
+							resonance += GetModulationAmountSummed(ModulationDestType::VCF2RESONANCE);
 
 
-							if (cutoff > 0.7f)
-								cutoff = 0.7f;
-							else if (cutoff < 0.002f)
-								cutoff = 0.002f;
+							cutoff = Helpers::Clamp(vcf1cutoff, 0.002f, 0.7f);
 
 
 							float mf = 2.0f * sinf(M_PI_4 * cutoff);
@@ -1210,33 +1089,17 @@ namespace WaveSabreCore
 				vcaLevel = 0;
 
 				// VCA MODULATION
-				{
-					if (!resolvedModulations.vca.IsEmpty())
-					{
-						vcaLevel = 0;
-
-						for (int i=0; i< resolvedModulations.vca.Size(); ++i)
-							vcaLevel += 
-							(*resolvedModulations.vca[i].resolvedDepth) *
-							(*resolvedModulations.vca[i].resolvedSource);
-
-						vcaoutput *= vcaLevel;
-					}
-				}
+				if (resolvedModulations.IsAffecting(ModulationDestType::VCA))
+					vcaoutput *= GetModulationAmountSummed(ModulationDestType::VCA);
 			}
 
 			double osc1timeModifier = 1, osc2timeModifier = 1, osc3timeModifier = 1;
 
 			// OSC1 TUNE MODULATION
 			{
-				if (!resolvedModulations.osc1tune.IsEmpty())
+				if (resolvedModulations.IsAffecting(ModulationDestType::OSC1TUNE))
 				{
-					float modulation = 0;
-
-					for (int i = 0; i < resolvedModulations.osc1tune.Size(); ++i)
-						modulation +=
-						(*resolvedModulations.osc1tune[i].resolvedDepth) *
-						(*resolvedModulations.osc1tune[i].resolvedSource);
+					float modulation = GetModulationAmountSummed(ModulationDestType::OSC1TUNE);
 
 					osc1timeModifier *= gPandoraFastPow(modulation);
 				}
@@ -1244,14 +1107,9 @@ namespace WaveSabreCore
 
 			// OSC2 TUNE MODULATION
 			{
-				if (!resolvedModulations.osc2tune.IsEmpty())
+				if (resolvedModulations.IsAffecting(ModulationDestType::OSC2TUNE))
 				{
-					float modulation = 0;
-
-					for (int i = 0; i < resolvedModulations.osc2tune.Size(); ++i)
-						modulation +=
-						(*resolvedModulations.osc2tune[i].resolvedDepth) *
-						(*resolvedModulations.osc2tune[i].resolvedSource);
+					float modulation = GetModulationAmountSummed(ModulationDestType::OSC2TUNE);
 
 					osc2timeModifier *= gPandoraFastPow(modulation);
 				}
@@ -1259,14 +1117,9 @@ namespace WaveSabreCore
 
 			// OSC3 TUNE MODULATION
 			{
-				if (!resolvedModulations.osc3tune.IsEmpty())
+				if (resolvedModulations.IsAffecting(ModulationDestType::OSC3TUNE))
 				{
-					float modulation = 0;
-
-					for (int i = 0; i < resolvedModulations.osc3tune.Size(); ++i)
-						modulation +=
-						(*resolvedModulations.osc3tune[i].resolvedDepth) *
-						(*resolvedModulations.osc3tune[i].resolvedSource);
+					float modulation = GetModulationAmountSummed(ModulationDestType::OSC3TUNE);
 
 					osc3timeModifier *= gPandoraFastPow(modulation);
 				}
@@ -1354,9 +1207,9 @@ namespace WaveSabreCore
 		ResolveAllModulations();
 
 		// Init some LFO's
-		hasOwnLFO[0] = (pandora->lfo1keysync != LfoSyncType::OFF) || (resolvedModulations.lfo1rate.Size() > 0);
-		hasOwnLFO[1] = (pandora->lfo2keysync != LfoSyncType::OFF) || (resolvedModulations.lfo2rate.Size() > 0);
-		hasOwnLFO[2] = (pandora->lfo3keysync != LfoSyncType::OFF) || (resolvedModulations.lfo3rate.Size() > 0);
+		hasOwnLFO[0] = pandora->lfo1keysync != LfoSyncType::OFF || resolvedModulations.IsAffecting(ModulationDestType::LFO1RATE);
+		hasOwnLFO[1] = pandora->lfo2keysync != LfoSyncType::OFF || resolvedModulations.IsAffecting(ModulationDestType::LFO2RATE);
+		hasOwnLFO[2] = pandora->lfo3keysync != LfoSyncType::OFF || resolvedModulations.IsAffecting(ModulationDestType::LFO3RATE);
 
 		lfo[0] = NULL;
 		lfo[1] = NULL;
@@ -1408,7 +1261,6 @@ namespace WaveSabreCore
 		gate = false;
 	}
 
-
 	void Pandora::PandoraVoice::Terminate()
 	{
 		if (!IsOn)
@@ -1424,120 +1276,90 @@ namespace WaveSabreCore
 		FixedSizeList<Pandora::ResolvedModulationType>& dest,
 		FixedSizeList<Pandora::UnresolvedModulationType>& src)
 	{
+		dest.AddMultipleNoninitialized(src.Size());
+
 		for (int i = 0; i < src.Size(); ++i)
 		{
 			UnresolvedModulationType& srcMod = src[i];
-			ResolvedModulationType resMod;
+			ResolvedModulationType& resMod = dest[i];
 
-			// resolve depth to either constant or modulated float
-			if (srcMod.depthSource < 0)
-			{
-				resMod.resolvedDepth = &srcMod.depth;
-			}
-			else
-			{
-				ASSERT(srcMod.depthSource < sizeof(modulatedModulationDepth) / sizeof(float));
-				resMod.resolvedDepth = &modulatedModulationDepth[srcMod.depthSource];
-			}
-
-			// resolve source to correct provider
-			switch (srcMod.source)
-			{
-			case ModulationSourceType::ENV1:
-				resMod.resolvedSource = envelope1.GetLevelPtr();
-				break;
-			case ModulationSourceType::ENV2:
-				resMod.resolvedSource = envelope2.GetLevelPtr();
-				break;
-			case ModulationSourceType::ENV3:
-				resMod.resolvedSource = envelope3.GetLevelPtr();
-				break;
-			case ModulationSourceType::ENV4:
-				resMod.resolvedSource = envelope4.GetLevelPtr();
-				break;
-			case ModulationSourceType::LFO1:
-				resMod.resolvedSource = &currentLfo1Amount;
-				break;
-			case ModulationSourceType::LFO2:
-				resMod.resolvedSource = &currentLfo2Amount;
-				break;
-			case ModulationSourceType::LFO3:
-				resMod.resolvedSource = &currentLfo3Amount;
-				break;
-			case ModulationSourceType::OSC1:
-				resMod.resolvedSource = &osc1level;
-				break;
-			case ModulationSourceType::OSC2:
-				resMod.resolvedSource = &osc2level;
-				break;
-			case ModulationSourceType::OSC3:
-				resMod.resolvedSource = &osc3level;
-				break;
-			case ModulationSourceType::MIDICTRL_A:
-				resMod.resolvedSource = &pandora->midiControlledSettingA;
-				break;
-			case ModulationSourceType::MIDICTRL_B:
-				resMod.resolvedSource = &pandora->midiControlledSettingB;
-				break;
-			case ModulationSourceType::MIDICTRL_C:
-				resMod.resolvedSource = &pandora->midiControlledSettingC;
-				break;
-			case ModulationSourceType::MIDICTRL_D:
-				resMod.resolvedSource = &pandora->midiControlledSettingD;
-				break;
-			default:			
-				ASSERT_MSG(false, "Unknown modulation source found. Smells like a case of bad coding!");
-				break;
-			}
-
-			dest.Add(resMod);
+			ResolveModulation(resMod, srcMod);
 		}
+	}
+
+	void Pandora::PandoraVoice::ResolveModulation(Pandora::ResolvedModulationType& dest, Pandora::UnresolvedModulationType& src)
+	{
+		// resolve depth to either constant or modulated float
+		if (src.depthSource == ModulationDepthSourceType::CONSTANT)
+		{
+			dest.constantDepth = src.constantDepth * sModulationDepthRangeFactor[(int)src.constantDepthRange];
+			dest.resolvedDepth = &dest.constantDepth;
+		}
+		else
+		{
+			ASSERT((int)srcMod.depthSource < sizeof(modulatedModulationDepth) / sizeof(float));
+			dest.constantDepth = 0.0f;
+			dest.resolvedDepth = &modulatedModulationDepth[(int)src.depthSource];
+		}
+
+		// resolve source to correct provider
+		switch (src.source)
+		{
+		case ModulationSourceType::ENV1:
+			dest.resolvedSource = envelope1.GetLevelPtr();
+			break;
+		case ModulationSourceType::ENV2:
+			dest.resolvedSource = envelope2.GetLevelPtr();
+			break;
+		case ModulationSourceType::ENV3:
+			dest.resolvedSource = envelope3.GetLevelPtr();
+			break;
+		case ModulationSourceType::ENV4:
+			dest.resolvedSource = envelope4.GetLevelPtr();
+			break;
+		case ModulationSourceType::LFO1:
+			dest.resolvedSource = &currentLfo1Amount;
+			break;
+		case ModulationSourceType::LFO2:
+			dest.resolvedSource = &currentLfo2Amount;
+			break;
+		case ModulationSourceType::LFO3:
+			dest.resolvedSource = &currentLfo3Amount;
+			break;
+		case ModulationSourceType::OSC1:
+			dest.resolvedSource = &osc1level;
+			break;
+		case ModulationSourceType::OSC2:
+			dest.resolvedSource = &osc2level;
+			break;
+		case ModulationSourceType::OSC3:
+			dest.resolvedSource = &osc3level;
+			break;
+		case ModulationSourceType::MIDICTRL_A:
+			dest.resolvedSource = &pandora->midiControlledSettingA;
+			break;
+		case ModulationSourceType::MIDICTRL_B:
+			dest.resolvedSource = &pandora->midiControlledSettingB;
+			break;
+		case ModulationSourceType::MIDICTRL_C:
+			dest.resolvedSource = &pandora->midiControlledSettingC;
+			break;
+		case ModulationSourceType::MIDICTRL_D:
+			dest.resolvedSource = &pandora->midiControlledSettingD;
+			break;
+		default:			
+			ASSERT_MSG(false, "Unknown modulation source found. Smells like a case of bad coding!");
+			break;
+		}
+
 	}
 
 	void Pandora::PandoraVoice::ResolveAllModulations()
 	{
-		ResolveModulations(resolvedModulations.osc1tune, pandora->modulations.osc1tune);
-		ResolveModulations(resolvedModulations.osc2tune, pandora->modulations.osc2tune);
-		ResolveModulations(resolvedModulations.osc3tune, pandora->modulations.osc3tune);
-
-		ResolveModulations(resolvedModulations.vcf1cutoff, pandora->modulations.vcf1cutoff);
-		ResolveModulations(resolvedModulations.vcf1resonance, pandora->modulations.vcf1resonance);
-		ResolveModulations(resolvedModulations.vcf2cutoff, pandora->modulations.vcf2cutoff);
-		ResolveModulations(resolvedModulations.vcf2resonance, pandora->modulations.vcf2resonance);
-		ResolveModulations(resolvedModulations.vca, pandora->modulations.vca);
-
-		ResolveModulations(resolvedModulations.osc1pulseWidth, pandora->modulations.osc1pulseWidth);
-		ResolveModulations(resolvedModulations.osc2pulseWidth, pandora->modulations.osc2pulseWidth);
-		ResolveModulations(resolvedModulations.osc3pulseWidth, pandora->modulations.osc3pulseWidth);
-
-		ResolveModulations(resolvedModulations.modDepthA, pandora->modulations.modDepthA);
-		ResolveModulations(resolvedModulations.modDepthB, pandora->modulations.modDepthB);
-		ResolveModulations(resolvedModulations.modDepthC, pandora->modulations.modDepthC);
-		ResolveModulations(resolvedModulations.modDepthD, pandora->modulations.modDepthD);
-
-		ResolveModulations(resolvedModulations.osc1level, pandora->modulations.osc1level);
-		ResolveModulations(resolvedModulations.osc2level, pandora->modulations.osc2level);
-		ResolveModulations(resolvedModulations.osc3level, pandora->modulations.osc3level);
-
-		ResolveModulations(resolvedModulations.stringLevel, pandora->modulations.stringLevel);
-
-		ResolveModulations(resolvedModulations.lfo1rate, pandora->modulations.lfo1rate);
-		ResolveModulations(resolvedModulations.lfo2rate, pandora->modulations.lfo2rate);
-		ResolveModulations(resolvedModulations.lfo3rate, pandora->modulations.lfo3rate);
+		for (int i = 0; i < (int)ModulationDestType::COUNT; ++i)
+			ResolveModulations(resolvedModulations.modulationsPerDest[i], pandora->modulations.modulationsPerDest[i]);
 
 		resolvedModulations.usedSourcesMask = pandora->modulations.usedSourcesMask;
-	}
-
-	void Pandora::PandoraVoice::UpdateModulatedModulationDepth(int index, const FixedSizeList<Pandora::ResolvedModulationType>& modulationSourceList)
-	{
-		float modulation = 1;
-
-		for (int i = 0; i < modulationSourceList.Size(); ++i)
-			modulation *=
-			(*modulationSourceList[i].resolvedDepth) *
-			(*modulationSourceList[i].resolvedSource);
-
-		modulatedModulationDepth[index] = modulation;
 	}
 
 

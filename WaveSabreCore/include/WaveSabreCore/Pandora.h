@@ -7,7 +7,8 @@
 #include "Envelope.h"
 #include "FixedSizeList.h"
 
-#define PANDORA_MAXMODULATIONS_PER_PATCH 128
+#define PANDORA_MAX_MODULATORS_PER_DEST 8
+#define PANDORA_NUM_MODULATION_DEST 22
 
 namespace WaveSabreCore
 {
@@ -87,6 +88,8 @@ namespace WaveSabreCore
 			ArpeggioInterval,
 			ArpeggioNoteDuration,
 			Pan,
+
+
 
 			NumParams,
 		};
@@ -206,61 +209,91 @@ namespace WaveSabreCore
 			MIDICTRL_D	= (1 << 13),
 		};
 
+		enum class ModulationDepthSourceType
+		{
+			CONSTANT = -1,
+			A,
+			B,
+			C,
+			D
+		};
+
+		enum class ModulationDepthRange
+		{
+			ONE = 0,
+			SIXTEEN,
+			SIXTYFOUR
+		};
+
+		static float sModulationDepthRangeFactor[3];
+
 		struct UnresolvedModulationType
 		{
-			ModulationSourceType source; // ModulationSourceType
-			float depth; // amount
-			int depthSource; // -1 for none, 0..3 for modDepthA..D
+			ModulationSourceType source;	// ModulationSourceType
+			float constantDepth;			// constant amount (-1..+1)
+			ModulationDepthRange constantDepthRange;	// range			
+			ModulationDepthSourceType depthSource; // -1 for none, 0..3 for modDepthA..D
 		};
 
 		struct ResolvedModulationType
 		{
 			float* resolvedSource;
 			float* resolvedDepth;
+			float constantDepth; // resolvedDepth points to this one when using constant modulation depth
+		};
+
+		enum class ModulationDestType
+		{
+			OSC1TUNE = 0,
+			OSC2TUNE,
+			VCF1CUTOFF,
+			VCF1RESONANCE,
+			VCF2CUTOFF,
+			VCF2RESONANCE,
+			VCA,
+			OSC3TUNE,
+			OSC1PULSEWIDTH,
+			OSC2PULSEWIDTH,
+			OSC3PULSEWIDTH,
+			MODDEPTHA,
+			MODDEPTHB,
+			MODDEPTHC,
+			MODDEPTHD,
+			OSC1LEVEL,
+			OSC2LEVEL,
+			OSC3LEVEL,
+			STRINGLEVEL,
+			LFO1RATE,
+			LFO2RATE,
+			LFO3RATE,
+			COUNT
 		};
 
 		// modulations
 		// when adding new ones:
 		//		- add to this ModulationsType struct
-		//		- add to Voice::ResolveAllPatchModulations() a call
-		//		- update serialization code in mainpanelimpl_synth.cpp (in patchdefinition.h)
-		//		- add a modulation option to the pulldown (in modulationpanelimpl.cpp)
+		//		- add to Voice::ResolveAllModulations() a call
 		//		- add a modulator code block to Voice::Render()
+		//		- add entry to ModulationDestType enum (at bottom)
 		template <typename T>
-		struct ModulationsType
+		struct AllModulationsType
 		{
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc1tune; // add <-- this one should stay the first one!
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc2tune; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> vcf1cutoff; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> vcf1resonance; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> vcf2cutoff; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> vcf2resonance;	 // add		
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> vca; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc3tune; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc1pulseWidth; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc2pulseWidth; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc3pulseWidth; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> modDepthA; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> modDepthB; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> modDepthC; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> modDepthD; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc1level; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc2level; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> osc3level; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> stringLevel; // amplify
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> lfo1rate; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> lfo2rate; // add
-			SizedFixedSizeList<T, PANDORA_MAXMODULATIONS_PER_PATCH> lfo3rate; // add
+			bool IsDependingOn(ModulationSourceType src) const
+			{
+				return (usedSourcesMask & (int)src) != 0;
+			}
 
-			//static const int numAvailableModulations = 22; // keep this up to date please, used for verification.
+			bool IsAffecting(ModulationDestType dest) const
+			{
+				return !modulationsPerDest[(int)dest].IsEmpty();
+			}			
 
-			unsigned int usedSourcesMask;
+			using ModulationsType = SizedFixedSizeList<T, PANDORA_MAX_MODULATORS_PER_DEST>;
 
-			ModulationsType() : usedSourcesMask(0)
-			{}
+			SizedFixedSizeList<ModulationsType, (int)ModulationDestType::COUNT> modulationsPerDest;
+			unsigned int usedSourcesMask = 0; //< Bitmask of which sources were used by all modulations in total
 		};
 
-		typedef ModulationsType<UnresolvedModulationType> UnresolvedModulationsType;
 
 		// 
 		// Parameters:
@@ -346,7 +379,7 @@ namespace WaveSabreCore
 		__int64 arpeggioNoteDuration;
 
 		// Modulation:
-		UnresolvedModulationsType modulations;
+		AllModulationsType<UnresolvedModulationType> modulations;
 
 		// Stuff that won't be serialized:
 		float midiControlledSettingA;
@@ -355,7 +388,6 @@ namespace WaveSabreCore
 		float midiControlledSettingD;
 
 	private:
-
 		class LFO
 		{
 		public:
@@ -471,9 +503,11 @@ namespace WaveSabreCore
 
 		private:
 			void Terminate();
+			float GetModulationAmountSummed(Pandora::ModulationDestType dest) const;
+			float GetModulationAmountMultiplied(Pandora::ModulationDestType dest) const;
+			void ResolveModulation(ResolvedModulationType& dest, UnresolvedModulationType& src);
 			void ResolveModulations(FixedSizeList<ResolvedModulationType>& dest, FixedSizeList<UnresolvedModulationType>& src);
 			void ResolveAllModulations();
-			void UpdateModulatedModulationDepth(int index, const FixedSizeList<ResolvedModulationType>& modulationSourceList);
 
 			Pandora* pandora;
 
@@ -492,7 +526,7 @@ namespace WaveSabreCore
 
 			float osc1level, osc2level, osc3level;
 
-			ModulationsType<ResolvedModulationType> resolvedModulations;
+			AllModulationsType<ResolvedModulationType> resolvedModulations;
 
 			float currentLfo1Amount; // placed here, so we can modulate it.
 			float currentLfo2Amount; // placed here, so we can modulate it.

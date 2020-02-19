@@ -2,7 +2,7 @@
 
 namespace VstVersion
 {
-	const int cCoreBuildNumber = 7;
+	const int cCoreBuildNumber = 8;
 
 	int getCoreBuildNumber()
 	{
