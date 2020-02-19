@@ -264,6 +264,18 @@ namespace WaveSabreCore
 	float Pandora::sModulationDepthRangeFactor[3] = { 1.0f, 16.0f, 64.0f };
 
 
+	void Pandora::sParamIndexToModulatorIndices(int index, int* modParamIndex, int* modIndex, int* destIndex)
+	{
+		ASSERT(index >= (int)ParamIndices::ModulatorFirstParam && index <= (int)ParamIndices::ModulatorLastParam);
+
+		int baseModParamIndex = index - (int)ParamIndices::ModulatorFirstParam;
+
+		*modParamIndex = baseModParamIndex % (int)ModulatorParamIndices::COUNT;
+		*modIndex = (baseModParamIndex / (int)ModulatorParamIndices::COUNT) % PANDORA_MAX_MODULATORS_PER_DEST;
+		*destIndex = baseModParamIndex / ((int)ModulatorParamIndices::COUNT * PANDORA_MAX_MODULATORS_PER_DEST);
+		ASSERT(*destIndex >= 0 && *destIndex < PANDORA_NUM_MODULATOR_DEST);
+	}
+
 	void Pandora::SetParam(int index, float value)
 	{
 		switch ((ParamIndices)index)
@@ -353,8 +365,59 @@ namespace WaveSabreCore
 		case ParamIndices::ArpeggioInterval:			arpeggioInterval = sArpeggioIntervalLinearToExponential(value); break;
 		case ParamIndices::ArpeggioNoteDuration:		arpeggioNoteDuration = sArpeggioIntervalLinearToExponential(value); break;
 		case ParamIndices::Pan:							VoicesPan = value; break;
+
+		// Modulator
+		default:
+		{
+			int modParamIndex;
+			int modIndex;
+			int destIndex;
+			sParamIndexToModulatorIndices(index, &modParamIndex, &modIndex, &destIndex);
+
+			AllModulationsType<UnresolvedModulationType>::ModulationsType& mods = modulations.modulationsPerDest[destIndex];
+			UnresolvedModulationType& mod = mods.modulations[modIndex];
+
+			switch ((ModulatorParamIndices)modParamIndex)
+			{
+			case ModulatorParamIndices::Source:				
+				{
+					mod.source = Helpers::ParamToEnum<ModulationSourceType>(value); 
+					RecalculateUsedModulationSourcesMasks(modulations, mods);
+					mods.SetUsed(modIndex, mod.source != ModulationSourceType::NONE);
+					ASSERT(mods.IsUsed() == (mod.source != ModulationSourceType::NONE));
+				}
+				break;
+			case ModulatorParamIndices::DepthSource:		mod.depthSource = Helpers::ParamToEnum<ModulationDepthSourceType>(value); break;
+			case ModulatorParamIndices::ConstantDepth:		mod.constantDepth = Helpers::ParamToRangedFloat(value, -1.0f, 1.0f); break;
+			case ModulatorParamIndices::ConstantDepthRange:	mod.constantDepthRange = Helpers::ParamToEnum<ModulationDepthRange>(value); break;
+			}
+		}
+		break;
 		}
 	}
+
+
+	void Pandora::RecalculateUsedModulationSourcesMasks(
+		Pandora::AllModulationsType<Pandora::UnresolvedModulationType>& allModulations,
+		Pandora::AllModulationsType<Pandora::UnresolvedModulationType>::ModulationsType& mods)
+	{
+		// First refresh the sources mask of the mods
+		mods.usedSourcesMask = 0;
+		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
+		{
+			if (mods.IsUsed(i))
+			{
+				ASSERT(mods.modulations[i].source != ModulationSourceType::NONE);
+				mods.usedSourcesMask = mods.usedSourcesMask | (1 << ((int)mods.modulations[i].source-1));
+			}
+		}
+
+		// Then refresh the sources mask of all the modulations
+		allModulations.usedSourcesMask = 0;
+		for (int i =0; i < PANDORA_NUM_MODULATOR_DEST; ++i)
+			allModulations.usedSourcesMask = allModulations.usedSourcesMask | allModulations.modulationsPerDest[i].usedSourcesMask;
+	}
+
 
 	float Pandora::GetParam(int index) const
 	{
@@ -435,6 +498,26 @@ namespace WaveSabreCore
 		case ParamIndices::ArpeggioInterval:			return sArpeggioIntervalExponentialToLinear(arpeggioInterval);
 		case ParamIndices::ArpeggioNoteDuration:		return sArpeggioIntervalExponentialToLinear(arpeggioNoteDuration);
 		case ParamIndices::Pan:							return VoicesPan;
+
+		// Modulator
+		default:
+			{
+				int modParamIndex;
+				int modIndex;
+				int destIndex;
+				sParamIndexToModulatorIndices(index, &modParamIndex, &modIndex, &destIndex);
+
+				const UnresolvedModulationType& mod = modulations.modulationsPerDest[destIndex].modulations[modIndex];
+
+				switch ((ModulatorParamIndices)modParamIndex)
+				{
+				case ModulatorParamIndices::Source:				return Helpers::EnumToParam<ModulationSourceType>(mod.source);
+				case ModulatorParamIndices::DepthSource:		return Helpers::EnumToParam<ModulationDepthSourceType>(mod.depthSource);
+				case ModulatorParamIndices::ConstantDepth:		return Helpers::RangedFloatToParam(mod.constantDepth, -1.0f, 1.0f);
+				case ModulatorParamIndices::ConstantDepthRange:	return Helpers::EnumToParam<ModulationDepthRange>(mod.constantDepthRange);
+				}
+			}
+			break;
 		}
 
 		return 0.0f;
@@ -677,8 +760,14 @@ namespace WaveSabreCore
 	{
 		float result = 0.0f;
 		const AllModulationsType<ResolvedModulationType>::ModulationsType& mods = resolvedModulations.modulationsPerDest[(int)dest];
-		for (int i = 0; i < mods.Size(); ++i)
-			result += (*mods[i].resolvedSource) * (*mods[i].resolvedDepth);
+
+		if (mods.usedModulatorsMask == 0)
+			return result;
+
+		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
+			if (mods.modulations[i].resolvedSource != NULL)
+				result += (*mods.modulations[i].resolvedSource) * (*mods.modulations[i].resolvedDepth);
+
 		return result;
 	}
 
@@ -686,8 +775,14 @@ namespace WaveSabreCore
 	{
 		float result = 1.0f;
 		const AllModulationsType<ResolvedModulationType>::ModulationsType& mods = resolvedModulations.modulationsPerDest[(int)dest];
-		for (int i = 0; i < mods.Size(); ++i)
-			result *= (*mods[i].resolvedSource) * (*mods[i].resolvedDepth);
+
+		if (mods.usedModulatorsMask == 0)
+			return result;
+
+		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
+			if (mods.modulations[i].resolvedSource != NULL)
+				result *= (*mods.modulations[i].resolvedSource) * (*mods.modulations[i].resolvedDepth);
+
 		return result;
 	}
 
@@ -1204,6 +1299,7 @@ namespace WaveSabreCore
 
 		noiseLoopOffset = (int)floorf(gPandoraRandFloatNormalized() * (float)PANDORA_VOICE_NOISE_LOOP_SIZE);
 
+		// Resolve all our modulations
 		ResolveAllModulations();
 
 		// Init some LFO's
@@ -1273,21 +1369,18 @@ namespace WaveSabreCore
 	}
 
 	void Pandora::PandoraVoice::ResolveModulations(
-		FixedSizeList<Pandora::ResolvedModulationType>& dest,
-		FixedSizeList<Pandora::UnresolvedModulationType>& src)
+		Pandora::AllModulationsType<Pandora::ResolvedModulationType>::ModulationsType& dest,
+		const Pandora::AllModulationsType<Pandora::UnresolvedModulationType>::ModulationsType& src)
 	{
-		dest.AddMultipleNoninitialized(src.Size());
+		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
+			ResolveModulation(dest.modulations[i], src.modulations[i]);
 
-		for (int i = 0; i < src.Size(); ++i)
-		{
-			UnresolvedModulationType& srcMod = src[i];
-			ResolvedModulationType& resMod = dest[i];
-
-			ResolveModulation(resMod, srcMod);
-		}
+		dest.usedModulatorsMask = src.usedModulatorsMask;
 	}
 
-	void Pandora::PandoraVoice::ResolveModulation(Pandora::ResolvedModulationType& dest, Pandora::UnresolvedModulationType& src)
+	void Pandora::PandoraVoice::ResolveModulation(
+		Pandora::ResolvedModulationType& dest,
+		const Pandora::UnresolvedModulationType& src)
 	{
 		// resolve depth to either constant or modulated float
 		if (src.depthSource == ModulationDepthSourceType::CONSTANT)
@@ -1299,7 +1392,7 @@ namespace WaveSabreCore
 		{
 			ASSERT((int)srcMod.depthSource < sizeof(modulatedModulationDepth) / sizeof(float));
 			dest.constantDepth = 0.0f;
-			dest.resolvedDepth = &modulatedModulationDepth[(int)src.depthSource];
+			dest.resolvedDepth = &modulatedModulationDepth[(int)src.depthSource-1];
 		}
 
 		// resolve source to correct provider

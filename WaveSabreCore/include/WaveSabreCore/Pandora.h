@@ -8,13 +8,23 @@
 #include "FixedSizeList.h"
 
 #define PANDORA_MAX_MODULATORS_PER_DEST 8
-#define PANDORA_NUM_MODULATION_DEST 22
+#define PANDORA_NUM_MODULATOR_DEST 22
 
 namespace WaveSabreCore
 {
 	class Pandora : public SynthDevice
 	{
 	public:
+		enum class ModulatorParamIndices
+		{
+			Source = 0,
+			DepthSource,
+			ConstantDepth,
+			ConstantDepthRange,
+
+			COUNT
+		};
+
 		enum class ParamIndices
 		{
 			Osc1waveform,
@@ -89,7 +99,8 @@ namespace WaveSabreCore
 			ArpeggioNoteDuration,
 			Pan,
 
-
+			ModulatorFirstParam,
+			ModulatorLastParam = ModulatorFirstParam + (PANDORA_NUM_MODULATOR_DEST * PANDORA_MAX_MODULATORS_PER_DEST * (int)ModulatorParamIndices::COUNT) - 1,
 
 			NumParams,
 		};
@@ -100,6 +111,8 @@ namespace WaveSabreCore
 		virtual float GetParam(int index) const;
 
 		virtual void Run(double songPosition, float** inputs, float** outputs, int numSamples);
+
+		static void sParamIndexToModulatorIndices(int index, int* modParamIndex, int* modIndex, int* destIndex);
 
 	public:
 		// These internal parameters are made public, so that the PandoraVST can directly read them to display the correct internal value.
@@ -193,36 +206,43 @@ namespace WaveSabreCore
 		//		- add a modulation source option to the pulldown (in modulationpanelimpl.cpp)
 		enum class ModulationSourceType
 		{
-			ENV1		= (1 << 0),
-			ENV2		= (1 << 1),
-			ENV3		= (1 << 2),
-			ENV4		= (1 << 3),
-			LFO1		= (1 << 4),
-			LFO2		= (1 << 5),
-			LFO3		= (1 << 6),
-			OSC1		= (1 << 7),
-			OSC2		= (1 << 8),
-			OSC3		= (1 << 9),
-			MIDICTRL_A	= (1 << 10),
-			MIDICTRL_B	= (1 << 11),
-			MIDICTRL_C	= (1 << 12),
-			MIDICTRL_D	= (1 << 13),
+			NONE = 0,
+			ENV1,
+			ENV2,
+			ENV3,
+			ENV4,
+			LFO1,
+			LFO2,
+			LFO3,
+			OSC1,
+			OSC2,
+			OSC3,
+			MIDICTRL_A,
+			MIDICTRL_B,
+			MIDICTRL_C,
+			MIDICTRL_D,
+
+			COUNT
 		};
 
 		enum class ModulationDepthSourceType
 		{
-			CONSTANT = -1,
+			CONSTANT = 0,
 			A,
 			B,
 			C,
-			D
+			D,
+
+			COUNT
 		};
 
 		enum class ModulationDepthRange
 		{
 			ONE = 0,
 			SIXTEEN,
-			SIXTYFOUR
+			SIXTYFOUR,
+
+			COUNT
 		};
 
 		static float sModulationDepthRangeFactor[3];
@@ -237,7 +257,7 @@ namespace WaveSabreCore
 
 		struct ResolvedModulationType
 		{
-			float* resolvedSource;
+			float* resolvedSource; // if NULL then not in use
 			float* resolvedDepth;
 			float constantDepth; // resolvedDepth points to this one when using constant modulation depth
 		};
@@ -269,28 +289,51 @@ namespace WaveSabreCore
 			COUNT
 		};
 
-		// modulations
-		// when adding new ones:
-		//		- add to this ModulationsType struct
-		//		- add to Voice::ResolveAllModulations() a call
-		//		- add a modulator code block to Voice::Render()
+		static_assert((int)ModulationDestType::COUNT == PANDORA_NUM_MODULATOR_DEST, "Detected a mismatch between the number of entries in ModulationDestType and the defined number of destinations PANDORA_NUM_MODULATOR_DEST!");
+
+		// modulations,
+		// when adding a new destination:
+		//		- add a consumer code block to Voice::Render()
 		//		- add entry to ModulationDestType enum (at bottom)
+		//		- increase PANDORA_NUM_MODULATOR_DEST by 1
+		// when adding a new source:
+		//		- add a modulator code block to Voice::Render()
+		//		- add entry to ModulationSourceType enum (at bottom)
 		template <typename T>
 		struct AllModulationsType
 		{
 			bool IsDependingOn(ModulationSourceType src) const
 			{
-				return (usedSourcesMask & (int)src) != 0;
+				ASSERT(src != ModulationSourceType::NONE);
+				return (usedSourcesMask & (1 << ((int)src-1))) != 0;
 			}
 
 			bool IsAffecting(ModulationDestType dest) const
 			{
-				return !modulationsPerDest[(int)dest].IsEmpty();
+				return modulationsPerDest[(int)dest].usedModulatorsMask != 0;
 			}			
 
-			using ModulationsType = SizedFixedSizeList<T, PANDORA_MAX_MODULATORS_PER_DEST>;
+			struct ModulationsType
+			{
+				bool IsUsed(int index) const
+				{
+					return (usedModulatorsMask & (1 << index)) != 0;
+				}
 
-			SizedFixedSizeList<ModulationsType, (int)ModulationDestType::COUNT> modulationsPerDest;
+				void SetUsed(int index, bool used)
+				{
+					if (used)
+						usedModulatorsMask = usedModulatorsMask | (1 << index);
+					else
+						usedModulatorsMask = usedModulatorsMask & ~(1 << index);
+				}
+
+				T modulations[PANDORA_MAX_MODULATORS_PER_DEST];
+				unsigned int usedModulatorsMask = 0; //< Bitmask indicating which items in modulations[] are in use
+				unsigned int usedSourcesMask = 0;  //< Bitmask of which sources were used by these modulations
+			};
+
+			ModulationsType modulationsPerDest[(int)ModulationDestType::COUNT];
 			unsigned int usedSourcesMask = 0; //< Bitmask of which sources were used by all modulations in total
 		};
 
@@ -388,6 +431,8 @@ namespace WaveSabreCore
 		float midiControlledSettingD;
 
 	private:
+		void RecalculateUsedModulationSourcesMasks(AllModulationsType<UnresolvedModulationType>& allModulations, AllModulationsType<UnresolvedModulationType>::ModulationsType& mods);
+
 		class LFO
 		{
 		public:
@@ -505,8 +550,8 @@ namespace WaveSabreCore
 			void Terminate();
 			float GetModulationAmountSummed(Pandora::ModulationDestType dest) const;
 			float GetModulationAmountMultiplied(Pandora::ModulationDestType dest) const;
-			void ResolveModulation(ResolvedModulationType& dest, UnresolvedModulationType& src);
-			void ResolveModulations(FixedSizeList<ResolvedModulationType>& dest, FixedSizeList<UnresolvedModulationType>& src);
+			void ResolveModulation(ResolvedModulationType& dest, const UnresolvedModulationType& src);
+			void ResolveModulations(AllModulationsType<ResolvedModulationType>::ModulationsType& dest, const AllModulationsType<UnresolvedModulationType>::ModulationsType& src);
 			void ResolveAllModulations();
 
 			Pandora* pandora;
