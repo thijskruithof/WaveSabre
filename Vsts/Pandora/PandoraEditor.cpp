@@ -4,7 +4,7 @@
 using namespace WaveSabreCore;
 
 PandoraEditor::PandoraEditor(AudioEffect *audioEffect)
-	: VstEditor(audioEffect, 920, 520, "PANDORA")
+	: VstEditor(audioEffect, 920, 720, "PANDORA")
 {
 }
 
@@ -113,6 +113,78 @@ void PandoraEditor::Open()
 
 	addKnob((VstInt32)Pandora::ParamIndices::Pan, "Pan");
 
+	addModulatorControls();
+}
+
+
+const char* sPandoraModulatorDestNames[(int)Pandora::ModulationDestType::COUNT] = {
+	"OSC1TUNE",
+	"OSC2TUNE",
+	"VCF1CUTOFF",
+	"VCF1RESONANCE",
+	"VCF2CUTOFF",
+	"VCF2RESONANCE",
+	"VCA",
+	"OSC3TUNE",
+	"OSC1PULSEWIDTH",
+	"OSC2PULSEWIDTH",
+	"OSC3PULSEWIDTH",
+	"MODDEPTHA",
+	"MODDEPTHB",
+	"MODDEPTHC",
+	"MODDEPTHD",
+	"OSC1LEVEL",
+	"OSC2LEVEL",
+	"OSC3LEVEL",
+	"STRINGLEVEL",
+	"LFO1RATE",
+	"LFO2RATE",
+	"LFO3RATE"
+};
+
+
+void PandoraEditor::addModulatorControls()
+{
+	const int cColWidth = 220;
+	const int cColHeight = 400;
+	const int cColSeperator = 16;
+	const int cStartY = 510;
+	const int cLeftMargin = 20;
+	const int cLabelHeight = 16;
+	const int cBottomMargin = 20;
+
+	const int cInnerMargin = 5;
+
+	// Add modulator destinations
+	CScrollView* view = new CScrollView(
+		CRect(cLeftMargin, cStartY, frame->getWidth() - cLeftMargin, frame->getHeight()-cBottomMargin),
+		CRect(0, 0, 2*cInnerMargin + PANDORA_NUM_MODULATOR_DEST * (cColWidth + cColSeperator) - cColSeperator, cColHeight),
+		frame, CScrollView::kHorizontalScrollbar | CScrollView::kVerticalScrollbar);
+	view->setBackgroundColor({ 225, 225, 225, 255 });
+	view->getHorizontalScrollbar()->setScrollerColor(kGreyCColor);
+	view->getVerticalScrollbar()->setScrollerColor(kGreyCColor);
+	frame->addView(view);
+
+	for (int i = 0; i < PANDORA_NUM_MODULATOR_DEST; ++i)
+	{
+		// Header
+		CRect size(
+			cInnerMargin + i * (cColWidth + cColSeperator),
+			cInnerMargin,
+			cInnerMargin + i * (cColWidth + cColSeperator) + cColWidth,
+			cInnerMargin + cLabelHeight);
+		CTextLabel* c = new CTextLabel(size, sPandoraModulatorDestNames[i]);
+		c->setFontColor(VSTGUI::kBlackCColor);
+		c->setBackColor(VSTGUI::kWhiteCColor);
+		c->setTransparency(false);
+		c->setTextTransparency(true);
+		c->setHoriAlign(CHoriTxtAlign::kCenterText);
+		c->setFont(kNormalFont);
+		c->setStyle(kBoldFace);
+		view->addView(c);
+
+
+	}
 
 	VstEditor::Open();
 }

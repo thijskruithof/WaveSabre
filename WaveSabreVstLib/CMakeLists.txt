@@ -22,6 +22,7 @@ add_library(WaveSabreVstLib
 	../Vst3.x/vstgui.sf/vstgui/aeffguieditor.cpp
 	../Vst3.x/vstgui.sf/vstgui/cfileselector.cpp
 	../Vst3.x/vstgui.sf/vstgui/cvstguitimer.cpp
+	../Vst3.x/vstgui.sf/vstgui/cscrollview.cpp
 	../Vst3.x/vstgui.sf/vstgui/vstcontrols.cpp
 	../Vst3.x/vstgui.sf/vstgui/vstgui.cpp
 	../Vst3.x/vstgui.sf/vstgui/vstguidebug.cpp

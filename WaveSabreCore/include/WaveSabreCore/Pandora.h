@@ -319,7 +319,7 @@ namespace WaveSabreCore
 				{
 					return (usedModulatorsMask & (1 << index)) != 0;
 				}
-
+				 
 				void SetUsed(int index, bool used)
 				{
 					if (used)

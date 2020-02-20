@@ -10,5 +10,5 @@
 #include "vstgui.sf/vstgui/vstgui.h"
 #include "vstgui.sf/vstgui/cfileselector.h"
 #include "vstgui.sf/vstgui/cvstguitimer.h"
-
+#include "vstgui.sf/vstgui/cscrollview.h"
 #endif

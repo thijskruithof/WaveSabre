@@ -11,6 +11,9 @@ public:
 	virtual ~PandoraEditor();
 
 	virtual void Open();
+
+private:
+	void addModulatorControls();
 };
 
 #endif
