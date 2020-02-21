@@ -117,6 +117,13 @@ void PandoraEditor::Open()
 }
 
 
+const char* sPandoraModulatorParamName[(int)Pandora::ModulatorParamIndices::COUNT] = {
+	"Source",
+	"DepthSource",
+	"Constant",
+	"Range"
+};
+
 const char* sPandoraModulatorDestNames[(int)Pandora::ModulationDestType::COUNT] = {
 	"OSC1TUNE",
 	"OSC2TUNE",
@@ -146,7 +153,7 @@ const char* sPandoraModulatorDestNames[(int)Pandora::ModulationDestType::COUNT] 
 void PandoraEditor::addModulatorControls()
 {
 	const int cColWidth = 220;
-	const int cColHeight = 400;
+	const int cColHeight = 800;
 	const int cColSeperator = 16;
 	const int cStartY = 510;
 	const int cLeftMargin = 20;
@@ -154,6 +161,16 @@ void PandoraEditor::addModulatorControls()
 	const int cBottomMargin = 20;
 
 	const int cInnerMargin = 5;
+	const int cModRowSeperator = 5;
+	const int cModRowHeight = 90;
+	const int cModSwitchLblSeperator = 5;
+	const int cModLblHeight = 16;
+	const int cModMargin = 5;
+	const int cModKnobY = 32;
+	const int cModKnobCaptionWidth = 100;
+	const int cModKnobCaptionOffset = 30;
+	const int cModKnobCaptionHeight = 20;
+	const int cModKnobOffsetX = 60;
 
 	// Add modulator destinations
 	CScrollView* view = new CScrollView(
@@ -165,15 +182,15 @@ void PandoraEditor::addModulatorControls()
 	view->getVerticalScrollbar()->setScrollerColor(kGreyCColor);
 	frame->addView(view);
 
-	for (int i = 0; i < PANDORA_NUM_MODULATOR_DEST; ++i)
+	for (int destIndex = 0; destIndex < PANDORA_NUM_MODULATOR_DEST; ++destIndex)
 	{
 		// Header
 		CRect size(
-			cInnerMargin + i * (cColWidth + cColSeperator),
+			cInnerMargin + destIndex * (cColWidth + cColSeperator),
 			cInnerMargin,
-			cInnerMargin + i * (cColWidth + cColSeperator) + cColWidth,
+			cInnerMargin + destIndex * (cColWidth + cColSeperator) + cColWidth,
 			cInnerMargin + cLabelHeight);
-		CTextLabel* c = new CTextLabel(size, sPandoraModulatorDestNames[i]);
+		CTextLabel* c = new CTextLabel(size, sPandoraModulatorDestNames[destIndex]);
 		c->setFontColor(VSTGUI::kBlackCColor);
 		c->setBackColor(VSTGUI::kWhiteCColor);
 		c->setTransparency(false);
@@ -183,6 +200,95 @@ void PandoraEditor::addModulatorControls()
 		c->setStyle(kBoldFace);
 		view->addView(c);
 
+
+		CBitmap* switchImage = ImageManager::Get(ImageManager::ImageIds::TinyButton);
+		CBitmap* knobImage = ImageManager::Get(ImageManager::ImageIds::Knob1);
+
+		// All modulators
+		int y = cInnerMargin + cLabelHeight + cModRowSeperator;
+
+		for (int modIndex = 0; modIndex < PANDORA_MAX_MODULATORS_PER_DEST; ++modIndex)
+		{
+			int parameterBaseIndex =
+				(int)Pandora::ParamIndices::ModulatorFirstParam +
+				modIndex * (int)Pandora::ModulatorParamIndices::COUNT +
+				destIndex * PANDORA_MAX_MODULATORS_PER_DEST * (int)Pandora::ModulatorParamIndices::COUNT;
+
+			int rowHeight = cModRowHeight;
+
+			CRect panelRect(
+				cInnerMargin + destIndex * (cColWidth + cColSeperator),
+				y,
+				cInnerMargin + destIndex * (cColWidth + cColSeperator) + cColWidth,
+				y + rowHeight
+			);
+
+			// Panel
+			CViewContainer* panel = new CViewContainer(panelRect, frame);
+			panel->setBackgroundColor(kWhiteCColor);
+			view->addView(panel);
+
+			// Switch
+			COnOffButton* sw = new COnOffButton(CRect(
+				cModMargin, 
+				cModMargin + (cModLblHeight - switchImage->getHeight() / 2)/2,
+				cModMargin + switchImage->getWidth(),
+				cModMargin + (cModLblHeight - switchImage->getHeight() / 2)/2 + switchImage->getHeight()/2),
+				NULL, 0, switchImage);
+			sw->setTransparency(true);
+			panel->addView(sw);
+
+			// Label
+			char lblText[512];
+			sprintf_s(lblText, 512, "Mod %d", modIndex);
+			CTextLabel* lbl = new CTextLabel(CRect(cModMargin + switchImage->getWidth() + cModSwitchLblSeperator, cModMargin, panelRect.right, cModMargin+cModLblHeight), lblText);
+			lbl->setFontColor(VSTGUI::kBlackCColor);
+			lbl->setTransparency(true);
+			lbl->setTextTransparency(true);
+			lbl->setHoriAlign(CHoriTxtAlign::kLeftText);
+			lbl->setFont(kNormalFont);
+			lbl->setStyle(kBoldFace);
+			panel->addView(lbl);
+
+			// Knobs
+			for (int paramIndex = 0; paramIndex < (int)Pandora::ModulatorParamIndices::COUNT; ++paramIndex)
+			{
+				int parameterIndex = parameterBaseIndex + paramIndex;
+
+				int x = paramIndex * cModKnobOffsetX;
+
+				// Knob
+				CEnhancedKnob* knobSource = new CEnhancedKnob(
+					CRect(cModMargin + x, cModKnobY, cModMargin + x + knobImage->getWidth(), cModKnobY + knobImage->getWidth()),
+					this,
+					parameterIndex,
+					knobImage->getHeight() / knobImage->getWidth(), knobImage->getWidth(), knobImage, CPoint(0));
+				float v = effect->getParameter(parameterIndex);
+				knobSource->setDefaultValue(v);
+				knobSource->setValue(v);
+				knobSource->setTransparency(true);
+				knobSource->setTag(parameterIndex);
+				panel->addView(knobSource);
+				registerControl(parameterIndex, knobSource);
+
+				// Value label
+				CTextLabel* c = new CTextLabel(
+					CRect(cModMargin + x + knobImage->getWidth() / 2 - cModKnobCaptionWidth / 2,
+						cModKnobY + cModKnobCaptionOffset,
+						cModMargin + x + knobImage->getWidth() / 2 + cModKnobCaptionWidth / 2,
+						cModKnobY + cModKnobCaptionOffset + cModKnobCaptionHeight),
+					sPandoraModulatorParamName[paramIndex]);
+				c->setFontColor(VSTGUI::kBlackCColor);
+				c->setTransparency(true);
+				c->setTextTransparency(true);
+				c->setHoriAlign(kCenterText);
+				c->setFont(kNormalFontVerySmall);
+				c->setStyle(kBoldFace);
+				panel->addView(c);
+			}
+
+			y += rowHeight + cModRowSeperator;
+		}
 
 	}
 

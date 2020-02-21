@@ -249,10 +249,10 @@ namespace WaveSabreCore
 
 		struct UnresolvedModulationType
 		{
-			ModulationSourceType source;	// ModulationSourceType
-			float constantDepth;			// constant amount (-1..+1)
-			ModulationDepthRange constantDepthRange;	// range			
-			ModulationDepthSourceType depthSource; // -1 for none, 0..3 for modDepthA..D
+			ModulationSourceType source					= ModulationSourceType::NONE;			// ModulationSourceType
+			float constantDepth							= 0.0f;									// constant amount (-1..+1)
+			ModulationDepthRange constantDepthRange		= ModulationDepthRange::ONE;			// range			
+			ModulationDepthSourceType depthSource		= ModulationDepthSourceType::CONSTANT;	// -1 for none, 0..3 for modDepthA..D
 		};
 
 		struct ResolvedModulationType

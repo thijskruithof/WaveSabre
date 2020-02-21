@@ -28,6 +28,7 @@ namespace WaveSabreVstLib
 
 	protected:
 		void startNextRow();
+		void registerControl(int param, CControl* control);
 
 		CTextLabel *addTextLabel(int x, int y, int w, int h, std::string text, CFontRef fontId = kNormalFontVeryBig, CHoriTxtAlign textAlign = kLeftText);
 

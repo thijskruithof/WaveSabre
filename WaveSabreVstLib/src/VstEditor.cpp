@@ -119,6 +119,11 @@ namespace WaveSabreVstLib
 		currentRow++;
 	}
 
+	void VstEditor::registerControl(int param, CControl* control)
+	{
+		controls.emplace(param, control);
+	}
+
 	CTextLabel *VstEditor::addTextLabel(int x, int y, int w, int h, string text, CFontRef fontId, CHoriTxtAlign textAlign)
 	{
 		if (!frame) return nullptr;

@@ -384,7 +384,7 @@ namespace WaveSabreCore
 					mod.source = Helpers::ParamToEnum<ModulationSourceType>(value); 
 					RecalculateUsedModulationSourcesMasks(modulations, mods);
 					mods.SetUsed(modIndex, mod.source != ModulationSourceType::NONE);
-					ASSERT(mods.IsUsed() == (mod.source != ModulationSourceType::NONE));
+					ASSERT(mods.IsUsed(modIndex) == (mod.source != ModulationSourceType::NONE));
 				}
 				break;
 			case ModulatorParamIndices::DepthSource:		mod.depthSource = Helpers::ParamToEnum<ModulationDepthSourceType>(value); break;
@@ -1390,7 +1390,6 @@ namespace WaveSabreCore
 		}
 		else
 		{
-			ASSERT((int)srcMod.depthSource < sizeof(modulatedModulationDepth) / sizeof(float));
 			dest.constantDepth = 0.0f;
 			dest.resolvedDepth = &modulatedModulationDepth[(int)src.depthSource-1];
 		}
