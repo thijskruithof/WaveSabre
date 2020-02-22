@@ -117,6 +117,40 @@ void PandoraEditor::Open()
 }
 
 
+
+void PandoraEditor::Close()
+{
+	VstEditor::Close();
+
+	modulatorPanelInfos.clear();
+
+	delete modulatorOnOffButtonListener;
+	modulatorOnOffButtonListener = 0;
+}
+
+
+void PandoraEditor::valueChanged(CControl* control)
+{
+	VstEditor::valueChanged(control);
+
+	int parameterIndex = control->getTag();
+
+	// If we have changed a modulator's Source param, update the UI
+	if (parameterIndex >= (int)Pandora::ParamIndices::ModulatorFirstParam &&
+		parameterIndex <= (int)Pandora::ParamIndices::ModulatorLastParam)
+	{
+		int modulatorParameterIndex = parameterIndex - (int)Pandora::ParamIndices::ModulatorFirstParam;
+		int modIndex = modulatorParameterIndex % (int)Pandora::ModulatorParamIndices::COUNT;
+
+		if (modIndex == (int)Pandora::ModulatorParamIndices::Source)
+		{
+			int modulatorPanelIndex = modulatorParameterIndex / (int)Pandora::ModulatorParamIndices::COUNT;
+			updateModulatorPanelOnOffState(modulatorPanelIndex);
+		}
+	}
+}
+
+
 const char* sPandoraModulatorParamName[(int)Pandora::ModulatorParamIndices::COUNT] = {
 	"Source",
 	"DepthSource",
@@ -162,7 +196,6 @@ void PandoraEditor::addModulatorControls()
 
 	const int cInnerMargin = 5;
 	const int cModRowSeperator = 5;
-	const int cModRowHeight = 90;
 	const int cModSwitchLblSeperator = 5;
 	const int cModLblHeight = 16;
 	const int cModMargin = 5;
@@ -171,6 +204,16 @@ void PandoraEditor::addModulatorControls()
 	const int cModKnobCaptionOffset = 30;
 	const int cModKnobCaptionHeight = 20;
 	const int cModKnobOffsetX = 60;
+
+	const CColor cColColors[] = {
+		{255,111,105,255},
+		{255,204,92,255},
+		{255,238,173,255},
+		{255,255,255,255},
+		{150,206,180,255}
+	};
+
+	modulatorOnOffButtonListener = new ModulatorOnOffButtonListener(this);
 
 	// Add modulator destinations
 	CScrollView* view = new CScrollView(
@@ -192,7 +235,8 @@ void PandoraEditor::addModulatorControls()
 			cInnerMargin + cLabelHeight);
 		CTextLabel* c = new CTextLabel(size, sPandoraModulatorDestNames[destIndex]);
 		c->setFontColor(VSTGUI::kBlackCColor);
-		c->setBackColor(VSTGUI::kWhiteCColor);
+		c->setBackColor(cColColors[destIndex%5]);
+		c->setFrameColor(cColColors[destIndex % 5]);
 		c->setTransparency(false);
 		c->setTextTransparency(true);
 		c->setHoriAlign(CHoriTxtAlign::kCenterText);
@@ -214,13 +258,13 @@ void PandoraEditor::addModulatorControls()
 				modIndex * (int)Pandora::ModulatorParamIndices::COUNT +
 				destIndex * PANDORA_MAX_MODULATORS_PER_DEST * (int)Pandora::ModulatorParamIndices::COUNT;
 
-			int rowHeight = cModRowHeight;
+			int currentModulatorPanelIndex = (int)modulatorPanelInfos.size();
 
 			CRect panelRect(
 				cInnerMargin + destIndex * (cColWidth + cColSeperator),
 				y,
 				cInnerMargin + destIndex * (cColWidth + cColSeperator) + cColWidth,
-				y + rowHeight
+				y + 10
 			);
 
 			// Panel
@@ -228,20 +272,20 @@ void PandoraEditor::addModulatorControls()
 			panel->setBackgroundColor(kWhiteCColor);
 			view->addView(panel);
 
-			// Switch
+			// On/off Switch
 			COnOffButton* sw = new COnOffButton(CRect(
 				cModMargin, 
 				cModMargin + (cModLblHeight - switchImage->getHeight() / 2)/2,
 				cModMargin + switchImage->getWidth(),
 				cModMargin + (cModLblHeight - switchImage->getHeight() / 2)/2 + switchImage->getHeight()/2),
-				NULL, 0, switchImage);
+				modulatorOnOffButtonListener,
+				currentModulatorPanelIndex, // tag
+				switchImage);
 			sw->setTransparency(true);
 			panel->addView(sw);
 
-			// Label
-			char lblText[512];
-			sprintf_s(lblText, 512, "Mod %d", modIndex);
-			CTextLabel* lbl = new CTextLabel(CRect(cModMargin + switchImage->getWidth() + cModSwitchLblSeperator, cModMargin, panelRect.right, cModMargin+cModLblHeight), lblText);
+			// On/off Label			
+			CTextLabel* lbl = new CTextLabel(CRect(cModMargin + switchImage->getWidth() + cModSwitchLblSeperator, cModMargin, panelRect.right, cModMargin+cModLblHeight), "");
 			lbl->setFontColor(VSTGUI::kBlackCColor);
 			lbl->setTransparency(true);
 			lbl->setTextTransparency(true);
@@ -249,6 +293,17 @@ void PandoraEditor::addModulatorControls()
 			lbl->setFont(kNormalFont);
 			lbl->setStyle(kBoldFace);
 			panel->addView(lbl);
+
+			// Store info about our panel
+			ModulatorPanelInfo info;
+			info.onOffButton = sw;
+			info.onOffLabel = lbl;
+			info.panel = panel;
+			info.modulationSourceParameterIndex = parameterBaseIndex + (int)Pandora::ModulatorParamIndices::Source;
+			modulatorPanelInfos.push_back(info);
+
+			// Initial update of on/off label text
+			updateModulatorPanelOnOffState(currentModulatorPanelIndex);
 
 			// Knobs
 			for (int paramIndex = 0; paramIndex < (int)Pandora::ModulatorParamIndices::COUNT; ++paramIndex)
@@ -287,10 +342,90 @@ void PandoraEditor::addModulatorControls()
 				panel->addView(c);
 			}
 
-			y += rowHeight + cModRowSeperator;
+			y += panel->getViewSize().getHeight() + cModRowSeperator;
 		}
 
 	}
 
 	VstEditor::Open();
 }
+
+void PandoraEditor::updateModulatorPanelOnOffState(int modulatorPanelIndex)
+{
+	ModulatorPanelInfo& info = modulatorPanelInfos[modulatorPanelIndex];
+
+	int modulatorIndex = modulatorPanelIndex % PANDORA_MAX_MODULATORS_PER_DEST;
+
+	bool isUsed = effect->getParameter(info.modulationSourceParameterIndex) > 0.0f;
+
+	char lblText[512];
+
+	if (isUsed)
+	{
+		char srcText[kVstMaxParamStrLen + 1];
+		effect->getParameterDisplay(info.modulationSourceParameterIndex, srcText);
+
+		sprintf_s(lblText, 512, "#%d: ON: %s", modulatorIndex, srcText);
+	}
+	else
+	{
+		sprintf_s(lblText, 512, "#%d: OFF", modulatorIndex);
+	}
+
+	info.onOffLabel->setText(lblText);
+	info.onOffLabel->setFontColor(isUsed ? kBlackCColor : kWhiteCColor);
+	info.panel->setBackgroundColor(isUsed ? kWhiteCColor : kGreyCColor);
+
+	const int cInUsePanelHeight = 90;
+	const int cUnusedPanelHeight = 25;
+
+	// Resize panel
+	CRect panelSize = info.panel->getViewSize();
+	int oldBottom = panelSize.bottom;
+	panelSize.bottom = panelSize.top + (isUsed ? cInUsePanelHeight : cUnusedPanelHeight);
+	info.panel->setViewSize(panelSize);
+	info.panel->setMouseableArea(panelSize);
+	int deltaY = panelSize.bottom - oldBottom;
+
+	// Move all panels below us as well
+	int neighbourPanelIndex = modulatorPanelIndex + 1;
+	while (
+		(neighbourPanelIndex % PANDORA_MAX_MODULATORS_PER_DEST) != 0 &&
+		neighbourPanelIndex < (int)modulatorPanelInfos.size())
+	{
+		ModulatorPanelInfo& neighbourPanelInfo = modulatorPanelInfos[neighbourPanelIndex];
+
+		CRect panelSize = neighbourPanelInfo.panel->getViewSize();
+		panelSize.offset(0, deltaY);
+		neighbourPanelInfo.panel->setViewSize(panelSize);
+		neighbourPanelInfo.panel->setMouseableArea(panelSize);
+
+		neighbourPanelIndex++;
+	}
+
+	// Repaint parent
+	frame->invalid();
+}
+
+void PandoraEditor::onModulatorOnOffChanged(int modulatorPanelIndex, bool newValue)
+{
+	ModulatorPanelInfo& info = modulatorPanelInfos[modulatorPanelIndex];
+
+	if (newValue)
+		effect->setParameter(info.modulationSourceParameterIndex, 1.0f);
+	else
+		effect->setParameter(info.modulationSourceParameterIndex, 0.0f);
+	
+		//effect->setParameter(info.modulationSourceParameterIndex, )
+
+	updateModulatorPanelOnOffState(modulatorPanelIndex);
+}
+
+void PandoraEditor::ModulatorOnOffButtonListener::valueChanged(VSTGUI::CControl* pControl)
+{
+	COnOffButton* button = (COnOffButton*)pControl;
+
+	int index = pControl->getTag();
+	editor->onModulatorOnOffChanged(index, button->getValue());
+}
+

@@ -382,9 +382,11 @@ namespace WaveSabreCore
 			case ModulatorParamIndices::Source:				
 				{
 					mod.source = Helpers::ParamToEnum<ModulationSourceType>(value); 
-					RecalculateUsedModulationSourcesMasks(modulations, mods);
+
 					mods.SetUsed(modIndex, mod.source != ModulationSourceType::NONE);
 					ASSERT(mods.IsUsed(modIndex) == (mod.source != ModulationSourceType::NONE));
+
+					RecalculateUsedModulationSourcesMasks(modulations, mods);
 				}
 				break;
 			case ModulatorParamIndices::DepthSource:		mod.depthSource = Helpers::ParamToEnum<ModulationDepthSourceType>(value); break;
@@ -1372,31 +1374,23 @@ namespace WaveSabreCore
 		Pandora::AllModulationsType<Pandora::ResolvedModulationType>::ModulationsType& dest,
 		const Pandora::AllModulationsType<Pandora::UnresolvedModulationType>::ModulationsType& src)
 	{
-		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
-			ResolveModulation(dest.modulations[i], src.modulations[i]);
-
 		dest.usedModulatorsMask = src.usedModulatorsMask;
+
+		if (src.usedModulatorsMask != 0)
+			for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
+				ResolveModulation(dest.modulations[i], src.modulations[i]);
 	}
 
 	void Pandora::PandoraVoice::ResolveModulation(
 		Pandora::ResolvedModulationType& dest,
 		const Pandora::UnresolvedModulationType& src)
 	{
-		// resolve depth to either constant or modulated float
-		if (src.depthSource == ModulationDepthSourceType::CONSTANT)
-		{
-			dest.constantDepth = src.constantDepth * sModulationDepthRangeFactor[(int)src.constantDepthRange];
-			dest.resolvedDepth = &dest.constantDepth;
-		}
-		else
-		{
-			dest.constantDepth = 0.0f;
-			dest.resolvedDepth = &modulatedModulationDepth[(int)src.depthSource-1];
-		}
-
 		// resolve source to correct provider
 		switch (src.source)
 		{
+		case ModulationSourceType::NONE:
+			dest.resolvedSource = NULL;
+			break;
 		case ModulationSourceType::ENV1:
 			dest.resolvedSource = envelope1.GetLevelPtr();
 			break;
@@ -1444,6 +1438,17 @@ namespace WaveSabreCore
 			break;
 		}
 
+		// resolve depth to either constant or modulated float
+		if (src.depthSource == ModulationDepthSourceType::CONSTANT)
+		{
+			dest.constantDepth = src.constantDepth * sModulationDepthRangeFactor[(int)src.constantDepthRange];
+			dest.resolvedDepth = &dest.constantDepth;
+		}
+		else
+		{
+			dest.constantDepth = 0.0f;
+			dest.resolvedDepth = &modulatedModulationDepth[(int)src.depthSource - 1];
+		}
 	}
 
 	void Pandora::PandoraVoice::ResolveAllModulations()
