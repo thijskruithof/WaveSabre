@@ -17,7 +17,8 @@ namespace WaveSabreCore
 	public:
 		enum class ModulatorParamIndices
 		{
-			Source = 0,
+			IsUsed = 0,
+			Source,
 			DepthSource,
 			ConstantDepth,
 			ConstantDepthRange,
@@ -206,8 +207,7 @@ namespace WaveSabreCore
 		//		- add a modulation source option to the pulldown (in modulationpanelimpl.cpp)
 		enum class ModulationSourceType
 		{
-			NONE = 0,
-			ENV1,
+			ENV1 = 0,
 			ENV2,
 			ENV3,
 			ENV4,
@@ -249,7 +249,8 @@ namespace WaveSabreCore
 
 		struct UnresolvedModulationType
 		{
-			ModulationSourceType source					= ModulationSourceType::NONE;			// ModulationSourceType
+			bool isUsed									= false;
+			ModulationSourceType source					= ModulationSourceType::ENV1;			// ModulationSourceType
 			float constantDepth							= 0.0f;									// constant amount (-1..+1)
 			ModulationDepthRange constantDepthRange		= ModulationDepthRange::ONE;			// range			
 			ModulationDepthSourceType depthSource		= ModulationDepthSourceType::CONSTANT;	// -1 for none, 0..3 for modDepthA..D
@@ -304,7 +305,6 @@ namespace WaveSabreCore
 		{
 			bool IsDependingOn(ModulationSourceType src) const
 			{
-				ASSERT(src != ModulationSourceType::NONE);
 				return (usedSourcesMask & (1 << ((int)src-1))) != 0;
 			}
 

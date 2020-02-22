@@ -36,6 +36,7 @@ private:
 		CViewContainer* panel;
 		COnOffButton* onOffButton;
 		CTextLabel* onOffLabel;
+		int modulationIsUsedParameterIndex;
 		int modulationSourceParameterIndex;
 	};
 

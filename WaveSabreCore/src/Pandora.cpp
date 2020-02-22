@@ -379,16 +379,17 @@ namespace WaveSabreCore
 
 			switch ((ModulatorParamIndices)modParamIndex)
 			{
-			case ModulatorParamIndices::Source:				
+			case ModulatorParamIndices::IsUsed:
 				{
-					mod.source = Helpers::ParamToEnum<ModulationSourceType>(value); 
+					mod.isUsed = Helpers::ParamToBoolean(value); 
 
-					mods.SetUsed(modIndex, mod.source != ModulationSourceType::NONE);
-					ASSERT(mods.IsUsed(modIndex) == (mod.source != ModulationSourceType::NONE));
+					mods.SetUsed(modIndex, mod.isUsed);
+					ASSERT(mods.IsUsed(modIndex) == mod.isUsed);
 
 					RecalculateUsedModulationSourcesMasks(modulations, mods);
 				}
 				break;
+			case ModulatorParamIndices::Source:				mod.source = Helpers::ParamToEnum<ModulationSourceType>(value);
 			case ModulatorParamIndices::DepthSource:		mod.depthSource = Helpers::ParamToEnum<ModulationDepthSourceType>(value); break;
 			case ModulatorParamIndices::ConstantDepth:		mod.constantDepth = Helpers::ParamToRangedFloat(value, -1.0f, 1.0f); break;
 			case ModulatorParamIndices::ConstantDepthRange:	mod.constantDepthRange = Helpers::ParamToEnum<ModulationDepthRange>(value); break;
@@ -406,13 +407,8 @@ namespace WaveSabreCore
 		// First refresh the sources mask of the mods
 		mods.usedSourcesMask = 0;
 		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
-		{
-			if (mods.IsUsed(i))
-			{
-				ASSERT(mods.modulations[i].source != ModulationSourceType::NONE);
+			if (mods.modulations[i].isUsed)
 				mods.usedSourcesMask = mods.usedSourcesMask | (1 << ((int)mods.modulations[i].source-1));
-			}
-		}
 
 		// Then refresh the sources mask of all the modulations
 		allModulations.usedSourcesMask = 0;
@@ -513,6 +509,7 @@ namespace WaveSabreCore
 
 				switch ((ModulatorParamIndices)modParamIndex)
 				{
+				case ModulatorParamIndices::IsUsed:				return Helpers::BooleanToParam(mod.isUsed);
 				case ModulatorParamIndices::Source:				return Helpers::EnumToParam<ModulationSourceType>(mod.source);
 				case ModulatorParamIndices::DepthSource:		return Helpers::EnumToParam<ModulationDepthSourceType>(mod.depthSource);
 				case ModulatorParamIndices::ConstantDepth:		return Helpers::RangedFloatToParam(mod.constantDepth, -1.0f, 1.0f);
@@ -1385,12 +1382,11 @@ namespace WaveSabreCore
 		Pandora::ResolvedModulationType& dest,
 		const Pandora::UnresolvedModulationType& src)
 	{
+		ASSERT(src.isUsed);
+
 		// resolve source to correct provider
 		switch (src.source)
 		{
-		case ModulationSourceType::NONE:
-			dest.resolvedSource = NULL;
-			break;
 		case ModulationSourceType::ENV1:
 			dest.resolvedSource = envelope1.GetLevelPtr();
 			break;

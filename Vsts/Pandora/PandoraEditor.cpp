@@ -282,6 +282,7 @@ void PandoraEditor::addModulatorControls()
 				currentModulatorPanelIndex, // tag
 				switchImage);
 			sw->setTransparency(true);
+			sw->setValue(effect->getParameter(parameterBaseIndex + (int)Pandora::ModulatorParamIndices::IsUsed));
 			panel->addView(sw);
 
 			// On/off Label			
@@ -299,6 +300,7 @@ void PandoraEditor::addModulatorControls()
 			info.onOffButton = sw;
 			info.onOffLabel = lbl;
 			info.panel = panel;
+			info.modulationIsUsedParameterIndex = parameterBaseIndex + (int)Pandora::ModulatorParamIndices::IsUsed;
 			info.modulationSourceParameterIndex = parameterBaseIndex + (int)Pandora::ModulatorParamIndices::Source;
 			modulatorPanelInfos.push_back(info);
 
@@ -306,11 +308,11 @@ void PandoraEditor::addModulatorControls()
 			updateModulatorPanelOnOffState(currentModulatorPanelIndex);
 
 			// Knobs
-			for (int paramIndex = 0; paramIndex < (int)Pandora::ModulatorParamIndices::COUNT; ++paramIndex)
+			for (int paramIndex = 1; paramIndex < (int)Pandora::ModulatorParamIndices::COUNT; ++paramIndex)
 			{
 				int parameterIndex = parameterBaseIndex + paramIndex;
 
-				int x = paramIndex * cModKnobOffsetX;
+				int x = (paramIndex-1) * cModKnobOffsetX;
 
 				// Knob
 				CEnhancedKnob* knobSource = new CEnhancedKnob(
@@ -332,7 +334,7 @@ void PandoraEditor::addModulatorControls()
 						cModKnobY + cModKnobCaptionOffset,
 						cModMargin + x + knobImage->getWidth() / 2 + cModKnobCaptionWidth / 2,
 						cModKnobY + cModKnobCaptionOffset + cModKnobCaptionHeight),
-					sPandoraModulatorParamName[paramIndex]);
+					sPandoraModulatorParamName[paramIndex-1]);
 				c->setFontColor(VSTGUI::kBlackCColor);
 				c->setTransparency(true);
 				c->setTextTransparency(true);
@@ -360,7 +362,7 @@ void PandoraEditor::updateModulatorPanelOnOffState(int modulatorPanelIndex)
 
 	int modulatorIndex = modulatorPanelIndex % PANDORA_MAX_MODULATORS_PER_DEST;
 
-	bool isUsed = effect->getParameter(info.modulationSourceParameterIndex) > 0.0f;
+	bool isUsed = effect->getParameter(info.modulationIsUsedParameterIndex) > 0.0f;
 
 	char lblText[512];
 
@@ -369,7 +371,7 @@ void PandoraEditor::updateModulatorPanelOnOffState(int modulatorPanelIndex)
 		char srcText[kVstMaxParamStrLen + 1];
 		effect->getParameterDisplay(info.modulationSourceParameterIndex, srcText);
 
-		sprintf_s(lblText, 512, "#%d: ON: %s", modulatorIndex, srcText);
+		sprintf_s(lblText, 512, "#%d: %s", modulatorIndex, srcText);
 	}
 	else
 	{
@@ -412,12 +414,7 @@ void PandoraEditor::onModulatorOnOffChanged(int modulatorPanelIndex, bool newVal
 {
 	ModulatorPanelInfo& info = modulatorPanelInfos[modulatorPanelIndex];
 
-	if (newValue)
-		effect->setParameter(info.modulationSourceParameterIndex, 1.0f);
-	else
-		effect->setParameter(info.modulationSourceParameterIndex, 0.0f);
-	
-		//effect->setParameter(info.modulationSourceParameterIndex, )
+	effect->setParameter(info.modulationIsUsedParameterIndex, newValue ? 1.0f : 0.0f);
 
 	updateModulatorPanelOnOffState(modulatorPanelIndex);
 }

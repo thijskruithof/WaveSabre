@@ -146,7 +146,6 @@ const char* gStrArpeggioType[(int)Pandora::ArpeggioType::COUNT] = {
 };
 
 const char* gStrModulationSourceType[(int)Pandora::ModulationSourceType::COUNT] = {
-	"NONE",
 	"ENV1",
 	"ENV2",
 	"ENV3",
@@ -266,6 +265,7 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 
 		switch ((Pandora::ModulatorParamIndices)modParamIndex)
 		{
+		case Pandora::ModulatorParamIndices::IsUsed:				setParameterDisplayAndLabel(display, label, mod.isUsed); break;
 		case Pandora::ModulatorParamIndices::Source:				setParameterDisplayAndLabel(display, label, gStrModulationSourceType[(int)mod.source]); break;
 		case Pandora::ModulatorParamIndices::DepthSource:			setParameterDisplayAndLabel(display, label, gStrModulationDepthSourceType[(int)mod.depthSource]); break;
 		case Pandora::ModulatorParamIndices::ConstantDepth:			setParameterDisplayAndLabel(display, label, mod.constantDepth, 2); break;
