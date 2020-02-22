@@ -352,6 +352,10 @@ void PandoraEditor::addModulatorControls()
 
 void PandoraEditor::updateModulatorPanelOnOffState(int modulatorPanelIndex)
 {
+	const int cInUsePanelHeight = 90;
+	const int cUnusedPanelHeight = 25;
+	const CColor cUnusedPanelColor = { 200,200,200,255 };
+
 	ModulatorPanelInfo& info = modulatorPanelInfos[modulatorPanelIndex];
 
 	int modulatorIndex = modulatorPanelIndex % PANDORA_MAX_MODULATORS_PER_DEST;
@@ -373,11 +377,8 @@ void PandoraEditor::updateModulatorPanelOnOffState(int modulatorPanelIndex)
 	}
 
 	info.onOffLabel->setText(lblText);
-	info.onOffLabel->setFontColor(isUsed ? kBlackCColor : kWhiteCColor);
-	info.panel->setBackgroundColor(isUsed ? kWhiteCColor : kGreyCColor);
+	info.panel->setBackgroundColor(isUsed ? kWhiteCColor : cUnusedPanelColor);
 
-	const int cInUsePanelHeight = 90;
-	const int cUnusedPanelHeight = 25;
 
 	// Resize panel
 	CRect panelSize = info.panel->getViewSize();
