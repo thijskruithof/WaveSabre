@@ -109,25 +109,25 @@ namespace WaveSabreVstLib
 
 	void VstPlug::getParameterLabel(VstInt32 index, char *label)
 	{
-		char dummy[kVstMaxParamStrLen+1];
+		char dummy[kVstExtMaxParamStrLen+1];
 		getParameterDisplayAndLabel(index, dummy, label);
 	}
 
 	void VstPlug::getParameterDisplay(VstInt32 index, char *text)
 	{
-		char dummy[kVstMaxParamStrLen+1];
+		char dummy[kVstExtMaxParamStrLen +1];
 		getParameterDisplayAndLabel(index, text, dummy);
 	}
 
 	void VstPlug::getParameterDisplayAndLabel(VstInt32 index, char* display, char* label)
 	{
-		snprintf(display, kVstMaxParamStrLen, "%.2f", 100.0f*device->GetParam(index));
-		vst_strncpy(label, "%", kVstMaxParamStrLen);
+		snprintf(display, kVstExtMaxParamStrLen, "%.2f", 100.0f*device->GetParam(index));
+		vst_strncpy(label, "%", kVstExtMaxParamStrLen);
 	}
 
 	void VstPlug::getParameterName(VstInt32 index, char *text)
 	{
-		vst_strncpy(text, "Name", kVstMaxParamStrLen);
+		vst_strncpy(text, "Name", kVstExtMaxParamStrLen);
 	}
 
 	VstInt32 VstPlug::getChunk(void **data, bool isPreset)
@@ -192,27 +192,27 @@ namespace WaveSabreVstLib
 
 	void VstPlug::setParameterDisplayAndLabel(char* display, char* label, bool value)
 	{
-		vst_strncpy(display, value ? "On" : "Off", kVstMaxParamStrLen);
-		vst_strncpy(label, "", kVstMaxParamStrLen);
+		vst_strncpy(display, value ? "On" : "Off", kVstExtMaxParamStrLen);
+		vst_strncpy(label, "", kVstExtMaxParamStrLen);
 	}
 
 	void VstPlug::setParameterDisplayAndLabel(char* display, char* label, float value, int decimals, const char* units)
 	{
 		char fmt[8];
 		sprintf_s(fmt, 8, "%%.%df", decimals);
-		sprintf_s(display, kVstMaxParamStrLen, fmt, value);
-		vst_strncpy(label, units, kVstMaxParamStrLen);
+		sprintf_s(display, kVstExtMaxParamStrLen, fmt, value);
+		vst_strncpy(label, units, kVstExtMaxParamStrLen);
 	}
 
 	void VstPlug::setParameterDisplayAndLabel(char* display, char* label, int value, const char* units)
 	{
-		sprintf_s(display, kVstMaxParamStrLen, "%d", value);
-		vst_strncpy(label, units, kVstMaxParamStrLen);
+		sprintf_s(display, kVstExtMaxParamStrLen, "%d", value);
+		vst_strncpy(label, units, kVstExtMaxParamStrLen);
 	}
 
 	void VstPlug::setParameterDisplayAndLabel(char* display, char* label, const char* value)
 	{
-		vst_strncpy(display, value, kVstMaxParamStrLen);
-		vst_strncpy(label, "", kVstMaxParamStrLen);
+		vst_strncpy(display, value, kVstExtMaxParamStrLen);
+		vst_strncpy(label, "", kVstExtMaxParamStrLen);
 	}
 }

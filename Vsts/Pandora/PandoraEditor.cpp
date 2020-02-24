@@ -150,39 +150,8 @@ void PandoraEditor::valueChanged(CControl* control)
 	}
 }
 
-
-const char* sPandoraModulatorParamName[(int)Pandora::ModulatorParamIndices::COUNT] = {
-	"Source",
-	"Depth",
-	"Range",
-	"DepthSource",
-};
-
-const char* sPandoraModulatorDestNames[(int)Pandora::ModulationDestType::COUNT] = {
-	"OSC1TUNE",
-	"OSC2TUNE",
-	"VCF1CUTOFF",
-	"VCF1RESONANCE",
-	"VCF2CUTOFF",
-	"VCF2RESONANCE",
-	"VCA",
-	"OSC3TUNE",
-	"OSC1PULSEWIDTH",
-	"OSC2PULSEWIDTH",
-	"OSC3PULSEWIDTH",
-	"OSC1LEVEL",
-	"OSC2LEVEL",
-	"OSC3LEVEL",
-	"STRINGLEVEL",
-	"LFO1RATE",
-	"LFO2RATE",
-	"LFO3RATE",
-	"MODDEPTHA",
-	"MODDEPTHB",
-	"MODDEPTHC",
-	"MODDEPTHD",
-};
-
+extern const char* gStrModulationParam[(int)Pandora::ModulatorParamIndices::COUNT];
+extern const char* gStrModulationDestType[(int)Pandora::ModulationDestType::COUNT];
 
 void PandoraEditor::addModulatorControls()
 {
@@ -234,7 +203,7 @@ void PandoraEditor::addModulatorControls()
 			cInnerMargin + destIndex * (cColWidth + cColSeperator) + cColWidth,
 			cInnerMargin + cLabelHeight);
 		char destLblText[256];
-		sprintf_s(destLblText, ">> %s", sPandoraModulatorDestNames[destIndex]);
+		sprintf_s(destLblText, ">> %s", gStrModulationDestType[destIndex]);
 		CTextLabel* c = new CTextLabel(size, destLblText);
 		c->setFontColor(VSTGUI::kBlackCColor);
 		c->setBackColor(cColColors[destIndex%5]);
@@ -336,7 +305,7 @@ void PandoraEditor::addModulatorControls()
 						cModKnobY + cModKnobCaptionOffset,
 						cModMargin + x + knobImage->getWidth() / 2 + cModKnobCaptionWidth / 2,
 						cModKnobY + cModKnobCaptionOffset + cModKnobCaptionHeight),
-					sPandoraModulatorParamName[paramIndex-1]);
+					gStrModulationParam[paramIndex]);
 				c->setFontColor(VSTGUI::kBlackCColor);
 				c->setTransparency(true);
 				c->setTextTransparency(true);
@@ -370,7 +339,7 @@ void PandoraEditor::updateModulatorPanelOnOffState(int modulatorPanelIndex)
 
 	if (isUsed)
 	{
-		char srcText[kVstMaxParamStrLen + 1];
+		char srcText[kVstExtMaxParamStrLen + 1];
 		effect->getParameterDisplay(info.modulationSourceParameterIndex, srcText);
 
 		sprintf_s(lblText, 512, "#%d: %s", modulatorIndex, srcText);

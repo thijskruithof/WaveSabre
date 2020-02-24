@@ -146,7 +146,7 @@ namespace WaveSabreVstLib
 		VstInt32 param = knob->getTag();
 
 		VstPlug* plug = (VstPlug*)effect;
-		char disp[kVstMaxParamStrLen + 1], label[kVstMaxParamStrLen + 1];
+		char disp[kVstExtMaxParamStrLen + 1], label[kVstExtMaxParamStrLen + 1];
 		plug->getParameterDisplayAndLabel(param, disp, label);
 		sprintf_s(text, 256, "%s%s", disp, label);
 	}

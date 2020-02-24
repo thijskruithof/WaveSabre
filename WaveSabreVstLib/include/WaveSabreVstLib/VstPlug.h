@@ -6,6 +6,11 @@
 
 #include <WaveSabreCore.h>
 
+enum VstExtStringConstants
+{
+	kVstExtMaxParamStrLen = 32,	///< kVstMaxParamStrLen is only 8, which is CRAZY SHORT. (Nearly) all hosts allow bigger buffers internally though.
+};
+
 namespace WaveSabreVstLib
 {
 	class VstPlug : public AudioEffectX

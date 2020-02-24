@@ -13,8 +13,8 @@ public:
 	virtual void Open();
 	virtual void Close();
 
-
 	virtual void valueChanged(CControl* control);
+
 
 private:
 	void addModulatorControls();

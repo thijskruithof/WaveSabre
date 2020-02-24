@@ -4,95 +4,41 @@
 #include <WaveSabreCore.h>
 using namespace WaveSabreCore;
 
-AudioEffect *createEffectInstance(audioMasterCallback audioMaster)
-{
-	Helpers::Init();
-	return new PandoraVst(audioMaster);
-}
 
-PandoraVst::PandoraVst(audioMasterCallback audioMaster)
-	: VstPlug(audioMaster, (int)Pandora::ParamIndices::NumParams, 0, 2, 'Pndr', new Pandora(), true)
-{
-	setEditor(new PandoraEditor(this));
-}
 
-void PandoraVst::getParameterName(VstInt32 index, char *text)
-{
-	switch ((Pandora::ParamIndices)index)
-	{
-	case Pandora::ParamIndices::Osc1waveform:				vst_strncpy(text, "Osc1wave", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc2waveform:				vst_strncpy(text, "Osc2wave", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc3waveform:				vst_strncpy(text, "Osc3wave", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc1baseToneTranspose:		vst_strncpy(text, "Osc1base", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc2baseToneTranspose:		vst_strncpy(text, "Osc2base", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc3baseToneTranspose:		vst_strncpy(text, "Osc3base", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc1finetune:				vst_strncpy(text, "Osc1fine", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc2finetune:				vst_strncpy(text, "Osc2fine", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc3finetune:				vst_strncpy(text, "Osc3fine", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc1pulseWidth:				vst_strncpy(text, "Osc1pw", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc2pulseWidth:				vst_strncpy(text, "Osc2pw", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc3pulseWidth:				vst_strncpy(text, "Osc3pw", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::MixAmountOsc1:				vst_strncpy(text, "Osc1lvl", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::MixAmountOsc2:				vst_strncpy(text, "Osc1lv2", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::MixAmountOsc3:				vst_strncpy(text, "Osc1lv3", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::StringDamping:				vst_strncpy(text, "StrDamp", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::StringFeedbackAmount:		vst_strncpy(text, "StrFb", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::StringFeedbackDelay:		vst_strncpy(text, "StrFbDl", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::StringThickness:			vst_strncpy(text, "StrThck", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::StringLevel:				vst_strncpy(text, "StrLvl", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::OscStringMix:				vst_strncpy(text, "OscStrMx", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Osc2sync:					vst_strncpy(text, "Osc2sync", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo1rate:					vst_strncpy(text, "Lfo1rate", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo2rate:					vst_strncpy(text, "Lfo2rate", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo3rate:					vst_strncpy(text, "Lfo3rate", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo1waveform:				vst_strncpy(text, "Lfo1wave", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo2waveform:				vst_strncpy(text, "Lfo2wave", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo3waveform:				vst_strncpy(text, "Lfo3wave", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo1keysync:				vst_strncpy(text, "Lfo1sync", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo2keysync:				vst_strncpy(text, "Lfo2sync", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo3keysync:				vst_strncpy(text, "Lfo3sync", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo1positive:				vst_strncpy(text, "Lfo1pos", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo2positive:				vst_strncpy(text, "Lfo2pos", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Lfo3positive:				vst_strncpy(text, "Lfo3pos", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope1attackRate:		vst_strncpy(text, "Env1att", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope1decayRate:			vst_strncpy(text, "Env1dec", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope1sustainLevel:		vst_strncpy(text, "Env1sus", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope1releaseRate:		vst_strncpy(text, "Env1rel", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope2attackRate:		vst_strncpy(text, "Env2att", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope2decayRate:			vst_strncpy(text, "Env2dec", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope2sustainLevel:		vst_strncpy(text, "Env2sus", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope2releaseRate:		vst_strncpy(text, "Env2rel", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope3attackRate:		vst_strncpy(text, "Env3att", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope3decayRate:			vst_strncpy(text, "Env3dec", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope3sustainLevel:		vst_strncpy(text, "Env3sus", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope3releaseRate:		vst_strncpy(text, "Env3rel", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope4attackRate:		vst_strncpy(text, "Env4att", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope4decayRate:			vst_strncpy(text, "Env4dec", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope4sustainLevel:		vst_strncpy(text, "Env4sus", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Envelope4releaseRate:		vst_strncpy(text, "Env4rel", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::VcfRouting:					vst_strncpy(text, "VcfRout", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Vcf1type:					vst_strncpy(text, "Vcf1type", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Vcf1Cutoff:					vst_strncpy(text, "Vcf1Cut", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Vcf1Resonance:				vst_strncpy(text, "Vcf1Reso", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Vcf2type:					vst_strncpy(text, "Vcf2type", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Vcf2Cutoff:					vst_strncpy(text, "Vcf2Cut", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Vcf2Resonance:				vst_strncpy(text, "Vcf2Reso", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::VcfCtrlBalance:				vst_strncpy(text, "VcfBal", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::Vcf2CutoffRelative:			vst_strncpy(text, "Vcf2CutR", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::VcfDistType:				vst_strncpy(text, "VDist", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::FilterDistDrive:			vst_strncpy(text, "VDistDrv", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::FilterDistShape:			vst_strncpy(text, "VDistShp", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::DoSlide:					vst_strncpy(text, "DoSlide", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::SlideSpeed:					vst_strncpy(text, "SlideSpd", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::NumUnisonVoices:			vst_strncpy(text, "NumUniso", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::UnisonSpread:				vst_strncpy(text, "UnisonSp", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::ArpeggioType:				vst_strncpy(text, "ArpType", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::ArpeggioNumOctaves:			vst_strncpy(text, "ArpOcta", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::ArpeggioInterval:			vst_strncpy(text, "ArpIntr", kVstMaxParamStrLen); break;
-	case Pandora::ParamIndices::ArpeggioNoteDuration:		vst_strncpy(text, "ArpNDur", kVstMaxParamStrLen); break;
-	}
-}
 
+const char* gStrModulationParam[(int)Pandora::ModulatorParamIndices::COUNT] = {
+	"IsUsed",
+	"Source",
+	"Depth",
+	"Range",
+	"DepthSource",
+};
+
+const char* gStrModulationDestType[(int)Pandora::ModulationDestType::COUNT] = {
+	"Osc1tune",
+	"Osc2tune",
+	"Vcf1cutoff",
+	"Vcf1resonance",
+	"Vcf2cutOff",
+	"Vcf2resonance",
+	"Vca",
+	"Osc3tune",
+	"Osc1pulsewidth",
+	"Osc2pulsewidth",
+	"Osc3pulsewidth",
+	"Osc1level",
+	"Osc2level",
+	"Osc3level",
+	"StringLevel",
+	"Lfo1rate",
+	"Lfo2rate",
+	"Lfo3rate",
+	"ModDepthA",
+	"ModDepthB",
+	"ModDepthC",
+	"ModDepthD",
+};
 
 const char* gStrOscWaveformType[(int)Pandora::OscWaveformType::COUNT] = {
 	"OFF",
@@ -174,6 +120,108 @@ const char* gStrModulationDepthRange[(int)Pandora::ModulationDepthRange::COUNT] 
 	"64"
 };
 
+
+AudioEffect *createEffectInstance(audioMasterCallback audioMaster)
+{
+	Helpers::Init();
+	return new PandoraVst(audioMaster);
+}
+
+PandoraVst::PandoraVst(audioMasterCallback audioMaster)
+	: VstPlug(audioMaster, (int)Pandora::ParamIndices::NumParams, 0, 2, 'Pndr', new Pandora(), true)
+{
+	setEditor(new PandoraEditor(this));
+}
+
+void PandoraVst::getParameterName(VstInt32 index, char *text)
+{
+	switch ((Pandora::ParamIndices)index)
+	{
+	case Pandora::ParamIndices::Osc1waveform:				vst_strncpy(text, "Osc1waveform", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc2waveform:				vst_strncpy(text, "Osc2waveform", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc3waveform:				vst_strncpy(text, "Osc3waveform", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc1baseToneTranspose:		vst_strncpy(text, "Osc1basetune", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc2baseToneTranspose:		vst_strncpy(text, "Osc2basetune", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc3baseToneTranspose:		vst_strncpy(text, "Osc3basetune", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc1finetune:				vst_strncpy(text, "Osc1finetune", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc2finetune:				vst_strncpy(text, "Osc2finetune", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc3finetune:				vst_strncpy(text, "Osc3finetune", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc1pulseWidth:				vst_strncpy(text, "Osc1pulsewidth", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc2pulseWidth:				vst_strncpy(text, "Osc2pulsewidth", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc3pulseWidth:				vst_strncpy(text, "Osc3pulsewidth", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::MixAmountOsc1:				vst_strncpy(text, "Osc1level1", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::MixAmountOsc2:				vst_strncpy(text, "Osc1level2", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::MixAmountOsc3:				vst_strncpy(text, "Osc1level3", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::StringDamping:				vst_strncpy(text, "StringDamping", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::StringFeedbackAmount:		vst_strncpy(text, "StringFeedback", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::StringFeedbackDelay:		vst_strncpy(text, "StringFeedbackDelay", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::StringThickness:			vst_strncpy(text, "StringThickness", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::StringLevel:				vst_strncpy(text, "StringLevel", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::OscStringMix:				vst_strncpy(text, "OscStingMix", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Osc2sync:					vst_strncpy(text, "Osc2sync", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo1rate:					vst_strncpy(text, "Lfo1rate", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo2rate:					vst_strncpy(text, "Lfo2rate", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo3rate:					vst_strncpy(text, "Lfo3rate", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo1waveform:				vst_strncpy(text, "Lfo1waveform", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo2waveform:				vst_strncpy(text, "Lfo2waveform", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo3waveform:				vst_strncpy(text, "Lfo3waveform", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo1keysync:				vst_strncpy(text, "Lfo1keysync", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo2keysync:				vst_strncpy(text, "Lfo2keysync", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo3keysync:				vst_strncpy(text, "Lfo3keysync", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo1positive:				vst_strncpy(text, "Lfo1positive", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo2positive:				vst_strncpy(text, "Lfo2positive", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Lfo3positive:				vst_strncpy(text, "Lfo3positive", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope1attackRate:		vst_strncpy(text, "Env1attack", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope1decayRate:			vst_strncpy(text, "Env1decay", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope1sustainLevel:		vst_strncpy(text, "Env1sustain", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope1releaseRate:		vst_strncpy(text, "Env1release", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope2attackRate:		vst_strncpy(text, "Env2attack", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope2decayRate:			vst_strncpy(text, "Env2decay", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope2sustainLevel:		vst_strncpy(text, "Env2sustain", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope2releaseRate:		vst_strncpy(text, "Env2release", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope3attackRate:		vst_strncpy(text, "Env3attack", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope3decayRate:			vst_strncpy(text, "Env3decay", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope3sustainLevel:		vst_strncpy(text, "Env3sustain", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope3releaseRate:		vst_strncpy(text, "Env3release", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope4attackRate:		vst_strncpy(text, "Env4attack", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope4decayRate:			vst_strncpy(text, "Env4decay", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope4sustainLevel:		vst_strncpy(text, "Env4sustain", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Envelope4releaseRate:		vst_strncpy(text, "Env4release", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::VcfRouting:					vst_strncpy(text, "VcfRouting", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Vcf1type:					vst_strncpy(text, "Vcf1type", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Vcf1Cutoff:					vst_strncpy(text, "Vcf1cutoff", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Vcf1Resonance:				vst_strncpy(text, "Vcf1resonance", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Vcf2type:					vst_strncpy(text, "Vcf2type", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Vcf2Cutoff:					vst_strncpy(text, "Vcf2cutoff", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Vcf2Resonance:				vst_strncpy(text, "Vcf2resonance", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::VcfCtrlBalance:				vst_strncpy(text, "Vcfbalance", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Vcf2CutoffRelative:			vst_strncpy(text, "Vcf2cutrelative", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::VcfDistType:				vst_strncpy(text, "Vcfdisttype", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::FilterDistDrive:			vst_strncpy(text, "Vcfdistdrive", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::FilterDistShape:			vst_strncpy(text, "Vcfdistshape", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::DoSlide:					vst_strncpy(text, "DoSlide", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::SlideSpeed:					vst_strncpy(text, "Slidespeed", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::NumUnisonVoices:			vst_strncpy(text, "NumUnison", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::UnisonSpread:				vst_strncpy(text, "Unisonspread", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::ArpeggioType:				vst_strncpy(text, "ArpType", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::ArpeggioNumOctaves:			vst_strncpy(text, "ArpOctaves", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::ArpeggioInterval:			vst_strncpy(text, "ArpInterval", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::ArpeggioNoteDuration:		vst_strncpy(text, "ArpNoteDuration", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::Pan:						vst_strncpy(text, "Pan", kVstExtMaxParamStrLen); break;
+
+	// Modulator
+	default:
+	{
+		int modParamIndex;
+		int modIndex;
+		int destIndex;
+		Pandora::sParamIndexToModulatorIndices(index, &modParamIndex, &modIndex, &destIndex);
+
+		sprintf_s(text, kVstExtMaxParamStrLen + 1, "Mod%s_%s%d", gStrModulationDestType[destIndex], gStrModulationParam[modParamIndex], modIndex);
+	}
+	break;
+	}
+}
 
 void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char* label)
 {
