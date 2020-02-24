@@ -19,9 +19,9 @@ namespace WaveSabreCore
 		{
 			IsUsed = 0,
 			Source,
-			DepthSource,
 			ConstantDepth,
 			ConstantDepthRange,
+			DepthSource,
 
 			COUNT
 		};
@@ -217,10 +217,10 @@ namespace WaveSabreCore
 			OSC1,
 			OSC2,
 			OSC3,
-			MIDICTRL_A,
-			MIDICTRL_B,
-			MIDICTRL_C,
-			MIDICTRL_D,
+			MIDICC_A,
+			MIDICC_B,
+			MIDICC_C,
+			MIDICC_D,
 
 			COUNT
 		};
@@ -251,9 +251,9 @@ namespace WaveSabreCore
 		{
 			bool isUsed									= false;
 			ModulationSourceType source					= ModulationSourceType::ENV1;			// ModulationSourceType
-			float constantDepth							= 0.0f;									// constant amount (-1..+1)
+			float constantDepth							= 1.0f;									// constant amount (-1..+1)
 			ModulationDepthRange constantDepthRange		= ModulationDepthRange::ONE;			// range			
-			ModulationDepthSourceType depthSource		= ModulationDepthSourceType::CONSTANT;	// -1 for none, 0..3 for modDepthA..D
+			ModulationDepthSourceType depthSource		= ModulationDepthSourceType::CONSTANT;	// where does our depth come from? is it constant?
 		};
 
 		struct ResolvedModulationType
@@ -276,10 +276,6 @@ namespace WaveSabreCore
 			OSC1PULSEWIDTH,
 			OSC2PULSEWIDTH,
 			OSC3PULSEWIDTH,
-			MODDEPTHA,
-			MODDEPTHB,
-			MODDEPTHC,
-			MODDEPTHD,
 			OSC1LEVEL,
 			OSC2LEVEL,
 			OSC3LEVEL,
@@ -287,6 +283,10 @@ namespace WaveSabreCore
 			LFO1RATE,
 			LFO2RATE,
 			LFO3RATE,
+			MODDEPTHA,
+			MODDEPTHB,
+			MODDEPTHC,
+			MODDEPTHD,
 			COUNT
 		};
 
@@ -305,7 +305,7 @@ namespace WaveSabreCore
 		{
 			bool IsDependingOn(ModulationSourceType src) const
 			{
-				return (usedSourcesMask & (1 << ((int)src-1))) != 0;
+				return (usedSourcesMask & (1 << (int)src)) != 0;
 			}
 
 			bool IsAffecting(ModulationDestType dest) const
@@ -495,8 +495,17 @@ namespace WaveSabreCore
 			};
 
 			Envelope(const EnvelopeSettings& settings) :
-				stage(EnvelopeStage::ATTACK), hasEnded(false), level(0), settings(settings)
-			{}
+				settings(settings)
+			{
+				Reset();
+			}
+
+			void Reset()
+			{
+				stage = EnvelopeStage::ATTACK;
+				hasEnded = false;
+				level = 0.0f;
+			}
 
 			bool HasEnded() const
 			{

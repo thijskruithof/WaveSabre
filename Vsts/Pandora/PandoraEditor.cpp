@@ -153,9 +153,9 @@ void PandoraEditor::valueChanged(CControl* control)
 
 const char* sPandoraModulatorParamName[(int)Pandora::ModulatorParamIndices::COUNT] = {
 	"Source",
+	"Depth",
+	"Range",
 	"DepthSource",
-	"Constant",
-	"Range"
 };
 
 const char* sPandoraModulatorDestNames[(int)Pandora::ModulationDestType::COUNT] = {
@@ -170,17 +170,17 @@ const char* sPandoraModulatorDestNames[(int)Pandora::ModulationDestType::COUNT] 
 	"OSC1PULSEWIDTH",
 	"OSC2PULSEWIDTH",
 	"OSC3PULSEWIDTH",
-	"MODDEPTHA",
-	"MODDEPTHB",
-	"MODDEPTHC",
-	"MODDEPTHD",
 	"OSC1LEVEL",
 	"OSC2LEVEL",
 	"OSC3LEVEL",
 	"STRINGLEVEL",
 	"LFO1RATE",
 	"LFO2RATE",
-	"LFO3RATE"
+	"LFO3RATE",
+	"MODDEPTHA",
+	"MODDEPTHB",
+	"MODDEPTHC",
+	"MODDEPTHD",
 };
 
 
@@ -233,7 +233,9 @@ void PandoraEditor::addModulatorControls()
 			cInnerMargin,
 			cInnerMargin + destIndex * (cColWidth + cColSeperator) + cColWidth,
 			cInnerMargin + cLabelHeight);
-		CTextLabel* c = new CTextLabel(size, sPandoraModulatorDestNames[destIndex]);
+		char destLblText[256];
+		sprintf_s(destLblText, ">> %s", sPandoraModulatorDestNames[destIndex]);
+		CTextLabel* c = new CTextLabel(size, destLblText);
 		c->setFontColor(VSTGUI::kBlackCColor);
 		c->setBackColor(cColColors[destIndex%5]);
 		c->setFrameColor(cColColors[destIndex % 5]);

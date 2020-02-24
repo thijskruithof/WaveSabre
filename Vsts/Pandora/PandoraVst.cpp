@@ -90,8 +90,6 @@ void PandoraVst::getParameterName(VstInt32 index, char *text)
 	case Pandora::ParamIndices::ArpeggioNumOctaves:			vst_strncpy(text, "ArpOcta", kVstMaxParamStrLen); break;
 	case Pandora::ParamIndices::ArpeggioInterval:			vst_strncpy(text, "ArpIntr", kVstMaxParamStrLen); break;
 	case Pandora::ParamIndices::ArpeggioNoteDuration:		vst_strncpy(text, "ArpNDur", kVstMaxParamStrLen); break;
-
-		// Todo: Add names for modulation parameters
 	}
 }
 
@@ -156,10 +154,10 @@ const char* gStrModulationSourceType[(int)Pandora::ModulationSourceType::COUNT] 
 	"OSC1",
 	"OSC2",
 	"OSC3",
-	"MIDICTRL_A",
-	"MIDICTRL_B",
-	"MIDICTRL_C",
-	"MIDICTRL_D"
+	"MIDICC_A",
+	"MIDICC_B",
+	"MIDICC_C",
+	"MIDICC_D"
 };
 
 const char* gStrModulationDepthSourceType[(int)Pandora::ModulationDepthSourceType::COUNT] = {

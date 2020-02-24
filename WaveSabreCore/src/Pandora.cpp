@@ -389,7 +389,13 @@ namespace WaveSabreCore
 					RecalculateUsedModulationSourcesMasks(modulations, mods);
 				}
 				break;
-			case ModulatorParamIndices::Source:				mod.source = Helpers::ParamToEnum<ModulationSourceType>(value);
+			case ModulatorParamIndices::Source:				
+				{
+					mod.source = Helpers::ParamToEnum<ModulationSourceType>(value);
+
+					RecalculateUsedModulationSourcesMasks(modulations, mods);
+				}
+				break;
 			case ModulatorParamIndices::DepthSource:		mod.depthSource = Helpers::ParamToEnum<ModulationDepthSourceType>(value); break;
 			case ModulatorParamIndices::ConstantDepth:		mod.constantDepth = Helpers::ParamToRangedFloat(value, -1.0f, 1.0f); break;
 			case ModulatorParamIndices::ConstantDepthRange:	mod.constantDepthRange = Helpers::ParamToEnum<ModulationDepthRange>(value); break;
@@ -408,7 +414,7 @@ namespace WaveSabreCore
 		mods.usedSourcesMask = 0;
 		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
 			if (mods.modulations[i].isUsed)
-				mods.usedSourcesMask = mods.usedSourcesMask | (1 << ((int)mods.modulations[i].source-1));
+				mods.usedSourcesMask = mods.usedSourcesMask | (1 << (int)mods.modulations[i].source);
 
 		// Then refresh the sources mask of all the modulations
 		allModulations.usedSourcesMask = 0;
@@ -764,7 +770,7 @@ namespace WaveSabreCore
 			return result;
 
 		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
-			if (mods.modulations[i].resolvedSource != NULL)
+			if (mods.IsUsed(i))
 				result += (*mods.modulations[i].resolvedSource) * (*mods.modulations[i].resolvedDepth);
 
 		return result;
@@ -779,7 +785,7 @@ namespace WaveSabreCore
 			return result;
 
 		for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
-			if (mods.modulations[i].resolvedSource != NULL)
+			if (mods.IsUsed(i))
 				result *= (*mods.modulations[i].resolvedSource) * (*mods.modulations[i].resolvedDepth);
 
 		return result;
@@ -1184,7 +1190,10 @@ namespace WaveSabreCore
 
 				// VCA MODULATION
 				if (resolvedModulations.IsAffecting(ModulationDestType::VCA))
-					vcaoutput *= GetModulationAmountSummed(ModulationDestType::VCA);
+				{
+					vcaLevel = GetModulationAmountSummed(ModulationDestType::VCA);
+					vcaoutput *= vcaLevel;
+				}
 			}
 
 			double osc1timeModifier = 1, osc2timeModifier = 1, osc3timeModifier = 1;
@@ -1278,6 +1287,10 @@ namespace WaveSabreCore
 		currentLfo1Amount = 0;
 		currentLfo2Amount = 0;
 		currentLfo3Amount = 0;
+		envelope1.Reset();
+		envelope2.Reset();
+		envelope3.Reset();
+		envelope4.Reset();
 
 		double factor = (410.96047696981869831451220512851 / (double)Helpers::CurrentSampleRate) / M_2_PI;
 		factor /= 100.0f; // magic scaling function
@@ -1375,7 +1388,8 @@ namespace WaveSabreCore
 
 		if (src.usedModulatorsMask != 0)
 			for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
-				ResolveModulation(dest.modulations[i], src.modulations[i]);
+				if (src.IsUsed(i))
+					ResolveModulation(dest.modulations[i], src.modulations[i]);
 	}
 
 	void Pandora::PandoraVoice::ResolveModulation(
@@ -1417,16 +1431,16 @@ namespace WaveSabreCore
 		case ModulationSourceType::OSC3:
 			dest.resolvedSource = &osc3level;
 			break;
-		case ModulationSourceType::MIDICTRL_A:
+		case ModulationSourceType::MIDICC_A:
 			dest.resolvedSource = &pandora->midiControlledSettingA;
 			break;
-		case ModulationSourceType::MIDICTRL_B:
+		case ModulationSourceType::MIDICC_B:
 			dest.resolvedSource = &pandora->midiControlledSettingB;
 			break;
-		case ModulationSourceType::MIDICTRL_C:
+		case ModulationSourceType::MIDICC_C:
 			dest.resolvedSource = &pandora->midiControlledSettingC;
 			break;
-		case ModulationSourceType::MIDICTRL_D:
+		case ModulationSourceType::MIDICC_D:
 			dest.resolvedSource = &pandora->midiControlledSettingD;
 			break;
 		default:			
