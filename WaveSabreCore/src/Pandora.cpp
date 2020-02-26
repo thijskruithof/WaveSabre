@@ -190,6 +190,7 @@ namespace WaveSabreCore
 		return (float)(log10f(value / 0.0000001f) / 7.0f); //log10(10000000) = 7
 	}
 
+	// From Linear duration to Exponential rate
 	static float sEnvelopeLinearToExponential(float value)
 	{
 		// envelope rates:
@@ -205,9 +206,10 @@ namespace WaveSabreCore
 
 		// This mapping is also part of Pandora itself, do not simply modify...
 
-		return 0.0000056689342f * powf(176400.0f, value);
+		return 0.0000056689342f * powf(176400.0f, 1.0f - value);
 	}
 
+	// From Exponential rate to Linear duration
 	static float sEnvelopeExponentialToLinear(float value)
 	{
 		// inverse of above formula:
@@ -216,7 +218,7 @@ namespace WaveSabreCore
 		// value(x) / 0.0000056689342 = 176400^x
 		// log10(value(x) / 0.0000056689342) / log10(176400) = x
 
-		return (float)(log10f(value / 0.0000056689342f) / log10f(176400.0f));
+		return 1.0f - (float)(log10f(value / 0.0000056689342f) / log10f(176400.0f));
 	}
 
 
@@ -314,22 +316,22 @@ namespace WaveSabreCore
 		case ParamIndices::Lfo1positive:				lfo1positive = Helpers::ParamToBoolean(value); break;
 		case ParamIndices::Lfo2positive:				lfo2positive = Helpers::ParamToBoolean(value); break;
 		case ParamIndices::Lfo3positive:				lfo3positive = Helpers::ParamToBoolean(value); break;
-		case ParamIndices::Envelope1attackRate:			envelope1.attackRate = sEnvelopeLinearToExponential(value); break;
-		case ParamIndices::Envelope1decayRate:			envelope1.decayRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope1attackDuration:		envelope1.attackRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope1decayDuration:		envelope1.decayRate = sEnvelopeLinearToExponential(value); break;
 		case ParamIndices::Envelope1sustainLevel:		envelope1.sustainLevel = value; break;
-		case ParamIndices::Envelope1releaseRate:		envelope1.releaseRate = sEnvelopeLinearToExponential(value); break;
-		case ParamIndices::Envelope2attackRate:			envelope2.attackRate = sEnvelopeLinearToExponential(value); break;
-		case ParamIndices::Envelope2decayRate:			envelope2.decayRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope1releaseDuration:	envelope1.releaseRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope2attackDuration:		envelope2.attackRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope2decayDuration:		envelope2.decayRate = sEnvelopeLinearToExponential(value); break;
 		case ParamIndices::Envelope2sustainLevel:		envelope2.sustainLevel = value; break;
-		case ParamIndices::Envelope2releaseRate:		envelope2.releaseRate = sEnvelopeLinearToExponential(value); break;
-		case ParamIndices::Envelope3attackRate:			envelope3.attackRate = sEnvelopeLinearToExponential(value); break;
-		case ParamIndices::Envelope3decayRate:			envelope3.decayRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope2releaseDuration:	envelope2.releaseRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope3attackDuration:		envelope3.attackRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope3decayDuration:		envelope3.decayRate = sEnvelopeLinearToExponential(value); break;
 		case ParamIndices::Envelope3sustainLevel:		envelope3.sustainLevel = value; break;
-		case ParamIndices::Envelope3releaseRate:		envelope3.releaseRate = sEnvelopeLinearToExponential(value); break;
-		case ParamIndices::Envelope4attackRate:			envelope4.attackRate = sEnvelopeLinearToExponential(value); break;
-		case ParamIndices::Envelope4decayRate:			envelope4.decayRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope3releaseDuration:	envelope3.releaseRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope4attackDuration:		envelope4.attackRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope4decayDuration:		envelope4.decayRate = sEnvelopeLinearToExponential(value); break;
 		case ParamIndices::Envelope4sustainLevel:		envelope4.sustainLevel = value; break;
-		case ParamIndices::Envelope4releaseRate:		envelope4.releaseRate = sEnvelopeLinearToExponential(value); break;
+		case ParamIndices::Envelope4releaseDuration:	envelope4.releaseRate = sEnvelopeLinearToExponential(value); break;
 		case ParamIndices::VcfRouting:					vcfRouting = Helpers::ParamToEnum<FilterRoutingType>(value); break;
 		case ParamIndices::Vcf1type:					vcf1type = Helpers::ParamToEnum<FilterType>(value); break;
 		case ParamIndices::Vcf1Cutoff:					vcf1Cutoff = Helpers::ParamToRangedFloat(value, 0.002f, 0.7f); break;
@@ -461,22 +463,22 @@ namespace WaveSabreCore
 		case ParamIndices::Lfo1positive:				return Helpers::BooleanToParam(lfo1positive);
 		case ParamIndices::Lfo2positive:				return Helpers::BooleanToParam(lfo2positive);
 		case ParamIndices::Lfo3positive:				return Helpers::BooleanToParam(lfo3positive);
-		case ParamIndices::Envelope1attackRate:			return sEnvelopeExponentialToLinear(envelope1.attackRate);
-		case ParamIndices::Envelope1decayRate:			return sEnvelopeExponentialToLinear(envelope1.decayRate);
+		case ParamIndices::Envelope1attackDuration:		return sEnvelopeExponentialToLinear(envelope1.attackRate);
+		case ParamIndices::Envelope1decayDuration:		return sEnvelopeExponentialToLinear(envelope1.decayRate);
 		case ParamIndices::Envelope1sustainLevel:		return envelope1.sustainLevel;
-		case ParamIndices::Envelope1releaseRate:		return sEnvelopeExponentialToLinear(envelope1.releaseRate);
-		case ParamIndices::Envelope2attackRate:			return sEnvelopeExponentialToLinear(envelope2.attackRate);
-		case ParamIndices::Envelope2decayRate:			return sEnvelopeExponentialToLinear(envelope2.decayRate);
+		case ParamIndices::Envelope1releaseDuration:	return sEnvelopeExponentialToLinear(envelope1.releaseRate);
+		case ParamIndices::Envelope2attackDuration:		return sEnvelopeExponentialToLinear(envelope2.attackRate);
+		case ParamIndices::Envelope2decayDuration:		return sEnvelopeExponentialToLinear(envelope2.decayRate);
 		case ParamIndices::Envelope2sustainLevel:		return envelope2.sustainLevel;
-		case ParamIndices::Envelope2releaseRate:		return sEnvelopeExponentialToLinear(envelope2.releaseRate);
-		case ParamIndices::Envelope3attackRate:			return sEnvelopeExponentialToLinear(envelope3.attackRate);
-		case ParamIndices::Envelope3decayRate:			return sEnvelopeExponentialToLinear(envelope3.decayRate);
+		case ParamIndices::Envelope2releaseDuration:	return sEnvelopeExponentialToLinear(envelope2.releaseRate);
+		case ParamIndices::Envelope3attackDuration:		return sEnvelopeExponentialToLinear(envelope3.attackRate);
+		case ParamIndices::Envelope3decayDuration:		return sEnvelopeExponentialToLinear(envelope3.decayRate);
 		case ParamIndices::Envelope3sustainLevel:		return envelope3.sustainLevel;
-		case ParamIndices::Envelope3releaseRate:		return sEnvelopeExponentialToLinear(envelope3.releaseRate);
-		case ParamIndices::Envelope4attackRate:			return sEnvelopeExponentialToLinear(envelope4.attackRate);
-		case ParamIndices::Envelope4decayRate:			return sEnvelopeExponentialToLinear(envelope4.decayRate);
+		case ParamIndices::Envelope3releaseDuration:	return sEnvelopeExponentialToLinear(envelope3.releaseRate);
+		case ParamIndices::Envelope4attackDuration:		return sEnvelopeExponentialToLinear(envelope4.attackRate);
+		case ParamIndices::Envelope4decayDuration:		return sEnvelopeExponentialToLinear(envelope4.decayRate);
 		case ParamIndices::Envelope4sustainLevel:		return envelope4.sustainLevel;
-		case ParamIndices::Envelope4releaseRate:		return sEnvelopeExponentialToLinear(envelope4.releaseRate);
+		case ParamIndices::Envelope4releaseDuration:	return sEnvelopeExponentialToLinear(envelope4.releaseRate);
 		case ParamIndices::VcfRouting:					return Helpers::EnumToParam<FilterRoutingType>(vcfRouting);
 		case ParamIndices::Vcf1type:					return Helpers::EnumToParam<FilterType>(vcf1type);
 		case ParamIndices::Vcf1Cutoff:					return Helpers::RangedFloatToParam(vcf1Cutoff, 0.002f, 0.7f); 

@@ -126,22 +126,22 @@ void PandoraEditor::Open()
 
 	startNextRow();
 
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope1attackRate, "Env1attack");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope1decayRate, "Env1decay");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope1attackDuration, "Env1attack");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope1decayDuration, "Env1decay");
 	addKnob((VstInt32)Pandora::ParamIndices::Envelope1sustainLevel, "Env1sus");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope1releaseRate, "Env1rel");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope2attackRate, "Env2attack");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope2decayRate, "Env2decay");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope1releaseDuration, "Env1rel");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope2attackDuration, "Env2attack");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope2decayDuration, "Env2decay");
 	addKnob((VstInt32)Pandora::ParamIndices::Envelope2sustainLevel, "Env2sus");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope2releaseRate, "Env2rel");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope3attackRate, "Env3attack");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope3decayRate, "Env3decay");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope2releaseDuration, "Env2rel");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope3attackDuration, "Env3attack");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope3decayDuration, "Env3decay");
 	addKnob((VstInt32)Pandora::ParamIndices::Envelope3sustainLevel, "Env3sus");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope3releaseRate, "Env3rel");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope4attackRate, "Env4attack");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope4decayRate, "Env4decay");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope3releaseDuration, "Env3rel");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope4attackDuration, "Env4attack");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope4decayDuration, "Env4decay");
 	addKnob((VstInt32)Pandora::ParamIndices::Envelope4sustainLevel, "Env4sus");
-	addKnob((VstInt32)Pandora::ParamIndices::Envelope4releaseRate, "Env4rel");
+	addKnob((VstInt32)Pandora::ParamIndices::Envelope4releaseDuration, "Env4rel");
 
 	startNextRow();
 
