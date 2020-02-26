@@ -3,9 +3,77 @@
 #include <WaveSabreCore.h>
 using namespace WaveSabreCore;
 
-PandoraEditor::PandoraEditor(AudioEffect *audioEffect)
-	: VstEditor(audioEffect, 920, 720, "PANDORA")
+const int cMinimumPandoraEditorWidth = 920;
+const int cMinimumPandoraEditorHeight = 800;
+
+
+CFrameResizer::CFrameResizer(int minFrameWidth, int minFrameHeight, CFrameResizerListener* listener, const CRect& size, CFrame* pParent, CBitmap* pBackground) :
+	CViewContainer(size, pParent, pBackground), minFrameWidth(minFrameWidth), minFrameHeight(minFrameHeight), listener(listener)
 {
+}
+
+CFrameResizer::CFrameResizer(const CFrameResizer& other) : CViewContainer(other)
+{
+}
+
+CMouseEventResult CFrameResizer::onMouseDown(CPoint& where, const long& buttons)
+{
+	if (buttons & kRButton)
+	{
+		listener->onFrameResizerSizeAdjusted(1280, 720);
+	}
+
+	if (buttons & kLButton)
+	{
+		isResizing = true;
+		startResizeMousePos = where;
+		startResizeFrameWidth = getFrame()->getWidth();
+		startResizeFrameHeight = getFrame()->getHeight();
+
+		return kMouseEventHandled;
+	}
+
+	return CViewContainer::onMouseDown(where, buttons);
+}
+
+CMouseEventResult CFrameResizer::onMouseUp(CPoint& where, const long& buttons)
+{
+	if ((buttons & kLButton) && isResizing)
+	{
+		isResizing = false;
+		return kMouseEventHandled;
+	}
+
+	return CViewContainer::onMouseUp(where, buttons);
+}
+
+CMouseEventResult CFrameResizer::onMouseMoved(CPoint& where, const long& buttons)
+{
+	if (isResizing)
+	{
+		int newFrameWidth = startResizeFrameWidth + (where.x - startResizeMousePos.x);
+		int newFrameHeight = startResizeFrameHeight + (where.y - startResizeMousePos.y);
+
+		if (newFrameWidth < minFrameWidth)
+			newFrameWidth = minFrameWidth;
+
+		if (newFrameHeight < minFrameHeight)
+			newFrameHeight = minFrameHeight;
+
+		listener->onFrameResizerSizeAdjusted(newFrameWidth, newFrameHeight);
+
+		return kMouseEventHandled;
+	}
+
+	return CViewContainer::onMouseMoved(where, buttons);
+}
+
+
+
+PandoraEditor::PandoraEditor(AudioEffect *audioEffect)
+	: VstEditor(audioEffect, cMinimumPandoraEditorWidth, cMinimumPandoraEditorHeight, "PANDORA")
+{
+
 }
 
 PandoraEditor::~PandoraEditor()
@@ -14,6 +82,11 @@ PandoraEditor::~PandoraEditor()
 
 void PandoraEditor::Open()
 {
+	// Force a solid color background 
+	// (instead of the 1078x768 bg image WaveSabre gives us by default which is not big enough)
+	frame->setBackground(NULL);
+	frame->setBackgroundColor({ 225,225,225,255 });
+
 	addKnob((VstInt32)Pandora::ParamIndices::Osc1waveform, "Osc1wave");
 	addKnob((VstInt32)Pandora::ParamIndices::Osc2waveform, "Osc2wave");
 	addKnob((VstInt32)Pandora::ParamIndices::Osc3waveform, "Osc3wave");
@@ -114,6 +187,12 @@ void PandoraEditor::Open()
 	addKnob((VstInt32)Pandora::ParamIndices::Pan, "Pan");
 
 	addModulatorControls();
+
+	addResizeControl();
+
+	onResized(frame->getWidth(), frame->getHeight(), frame->getWidth(), frame->getHeight());
+
+	VstEditor::Open();
 }
 
 
@@ -147,6 +226,32 @@ void PandoraEditor::valueChanged(CControl* control)
 			int modulatorPanelIndex = modulatorParameterIndex / (int)Pandora::ModulatorParamIndices::COUNT;
 			updateModulatorPanelOnOffState(modulatorPanelIndex);
 		}
+	}
+}
+
+void PandoraEditor::idle()
+{
+	VstEditor::idle();
+
+	if (hasResized)
+	{
+		hasResized = false;
+
+		int oldFrameWidth = frame->getWidth();
+		int oldFrameHeight = frame->getHeight();
+
+		frame->setSize(desiredFrameWidth, desiredFrameHeight);
+		frame->setViewSize(CRect(0, 0, desiredFrameWidth, desiredFrameHeight));
+		frame->setMouseableArea(CRect(0, 0, desiredFrameWidth, desiredFrameHeight));
+
+		rect.right = rect.left + desiredFrameWidth;
+		rect.bottom = rect.top + desiredFrameHeight;
+
+		AudioEffectX* aefx = (AudioEffectX*)((AEffGUIEditor*)this)->getEffect();
+		bool resizeSuccess = aefx->sizeWindow(desiredFrameWidth, desiredFrameHeight);
+		ASSERT(resizeSuccess);
+
+		onResized(desiredFrameWidth, desiredFrameHeight, oldFrameWidth, oldFrameHeight);
 	}
 }
 
@@ -185,14 +290,15 @@ void PandoraEditor::addModulatorControls()
 	modulatorOnOffButtonListener = new ModulatorOnOffButtonListener(this);
 
 	// Add modulator destinations
-	CScrollView* view = new CScrollView(
+	modulatorsScrollView = new CScrollView(
 		CRect(cLeftMargin, cStartY, frame->getWidth() - cLeftMargin, frame->getHeight()-cBottomMargin),
 		CRect(0, 0, 2*cInnerMargin + PANDORA_NUM_MODULATOR_DEST * (cColWidth + cColSeperator) - cColSeperator, cColHeight),
 		frame, CScrollView::kHorizontalScrollbar | CScrollView::kVerticalScrollbar);
-	view->setBackgroundColor({ 225, 225, 225, 255 });
-	view->getHorizontalScrollbar()->setScrollerColor(kGreyCColor);
-	view->getVerticalScrollbar()->setScrollerColor(kGreyCColor);
-	frame->addView(view);
+	modulatorsScrollView->setBackgroundColor({ 225, 225, 225, 255 });
+	modulatorsScrollView->getHorizontalScrollbar()->setScrollerColor(kGreyCColor);
+	modulatorsScrollView->getVerticalScrollbar()->setScrollerColor(kGreyCColor);
+	modulatorsScrollView->setAutosizeFlags(kAutosizeAll);
+	frame->addView(modulatorsScrollView);
 
 	for (int destIndex = 0; destIndex < PANDORA_NUM_MODULATOR_DEST; ++destIndex)
 	{
@@ -213,7 +319,7 @@ void PandoraEditor::addModulatorControls()
 		c->setHoriAlign(CHoriTxtAlign::kCenterText);
 		c->setFont(kNormalFont);
 		c->setStyle(kBoldFace);
-		view->addView(c);
+		modulatorsScrollView->addView(c);
 
 
 		CBitmap* switchImage = ImageManager::Get(ImageManager::ImageIds::TinyButton);
@@ -241,7 +347,7 @@ void PandoraEditor::addModulatorControls()
 			// Panel
 			CViewContainer* panel = new CViewContainer(panelRect, frame);
 			panel->setBackgroundColor(kWhiteCColor);
-			view->addView(panel);
+			modulatorsScrollView->addView(panel);
 
 			// On/off Switch
 			COnOffButton* sw = new COnOffButton(CRect(
@@ -319,9 +425,56 @@ void PandoraEditor::addModulatorControls()
 		}
 
 	}
-
-	VstEditor::Open();
 }
+
+
+
+void PandoraEditor::addResizeControl()
+{
+	const int cResizeButtonWidth = 16;
+	const int cResizeButtonHeight = 16;
+
+	// Value label
+	frameResizer = new CFrameResizer(
+		cMinimumPandoraEditorWidth, cMinimumPandoraEditorHeight,
+		this,
+		CRect(frame->getWidth() - cResizeButtonWidth,
+			frame->getHeight() - cResizeButtonHeight,
+			frame->getWidth(), 
+			frame->getHeight()),
+		frame);
+	frameResizer->setBackgroundColor(kRedCColor);
+	frameResizer->setAutosizeFlags(kAutosizeRight|kAutosizeBottom);
+	frame->addView(frameResizer);
+}
+
+void PandoraEditor::onFrameResizerSizeAdjusted(int newWidth, int newHeight)
+{
+	desiredFrameWidth = newWidth;
+	desiredFrameHeight = newHeight;
+	hasResized = true;
+}
+
+void PandoraEditor::onResized(int newFrameWidth, int newFrameHeight, int oldFrameWidth, int oldFrameHeight)
+{
+	//const int cResizeButtonWidth = 16;
+	//const int cResizeButtonHeight = 16;
+
+	//const int cMargin = 16;
+
+	//// Move the frame resizer (bottom right corner)
+	//CRect frameResizerRect(newFrameWidth - cResizeButtonWidth, newFrameHeight - cResizeButtonHeight, newFrameWidth, newFrameHeight);
+	//frameResizer->setViewSize(frameResizerRect);
+	//frameResizer->setMouseableArea(frameResizerRect);
+
+	// Scroll view for all modulators
+	//const CRect& oldModulatorsScrollViewRect = modulatorsScrollView->getViewSize();
+	//CRect modulatorsScrollViewRect(oldModulatorsScrollViewRect.left, oldModulatorsScrollViewRect.top, oldModulatorsScrollViewRect.bottom + (newFrameHeight - oldFrameHeight), oldModulatorsScrollViewRect.right + (newFrameWidth - oldFrameWidth));
+	//modulatorsScrollView->setViewSize(modulatorsScrollViewRect);
+	//modulatorsScrollView->setMouseableArea(modulatorsScrollViewRect);
+	//modulatorsScrollView->invalid();
+}
+
 
 void PandoraEditor::updateModulatorPanelOnOffState(int modulatorPanelIndex)
 {
