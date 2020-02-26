@@ -22,6 +22,7 @@ namespace WaveSabreVstLib
 		case ImageIds::TinyButton: b = new CBitmap(IDB_PNG3); break;
 		case ImageIds::OptionMenuUnpressed: b = new CBitmap(IDB_PNG4); break;
 		case ImageIds::OptionMenuPressed: b = new CBitmap(IDB_PNG5); break;
+		case ImageIds::ResizerButton: b = new CBitmap(IDB_PNG6); break;
 		}
 		b->remember();
 		im->bitmaps.emplace(imageId, b);

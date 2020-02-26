@@ -7,9 +7,10 @@ const int cMinimumPandoraEditorWidth = 920;
 const int cMinimumPandoraEditorHeight = 800;
 
 
-CFrameResizer::CFrameResizer(int minFrameWidth, int minFrameHeight, CFrameResizerListener* listener, const CRect& size, CFrame* pParent, CBitmap* pBackground) :
-	CViewContainer(size, pParent, pBackground), minFrameWidth(minFrameWidth), minFrameHeight(minFrameHeight), listener(listener)
+CFrameResizer::CFrameResizer(int minFrameWidth, int minFrameHeight, CFrameResizerListener* listener, const CRect& size, CFrame* pParent) :
+	CViewContainer(size, pParent, NULL), minFrameWidth(minFrameWidth), minFrameHeight(minFrameHeight), listener(listener)
 {
+	this->setBackground(WaveSabreVstLib::ImageManager::Get(WaveSabreVstLib::ImageManager::ImageIds::ResizerButton));
 }
 
 CFrameResizer::CFrameResizer(const CFrameResizer& other) : CViewContainer(other)
@@ -18,11 +19,6 @@ CFrameResizer::CFrameResizer(const CFrameResizer& other) : CViewContainer(other)
 
 CMouseEventResult CFrameResizer::onMouseDown(CPoint& where, const long& buttons)
 {
-	if (buttons & kRButton)
-	{
-		listener->onFrameResizerSizeAdjusted(1280, 720);
-	}
-
 	if (buttons & kLButton)
 	{
 		isResizing = true;
@@ -431,6 +427,7 @@ void PandoraEditor::addModulatorControls()
 
 void PandoraEditor::addResizeControl()
 {
+	const int cMargin = 2;
 	const int cResizeButtonWidth = 16;
 	const int cResizeButtonHeight = 16;
 
@@ -438,12 +435,11 @@ void PandoraEditor::addResizeControl()
 	frameResizer = new CFrameResizer(
 		cMinimumPandoraEditorWidth, cMinimumPandoraEditorHeight,
 		this,
-		CRect(frame->getWidth() - cResizeButtonWidth,
-			frame->getHeight() - cResizeButtonHeight,
-			frame->getWidth(), 
-			frame->getHeight()),
+		CRect(frame->getWidth() - cResizeButtonWidth - cMargin,
+			frame->getHeight() - cResizeButtonHeight - cMargin,
+			frame->getWidth() - cMargin,
+			frame->getHeight() - cMargin),
 		frame);
-	frameResizer->setBackgroundColor(kRedCColor);
 	frameResizer->setAutosizeFlags(kAutosizeRight|kAutosizeBottom);
 	frame->addView(frameResizer);
 }
@@ -457,22 +453,6 @@ void PandoraEditor::onFrameResizerSizeAdjusted(int newWidth, int newHeight)
 
 void PandoraEditor::onResized(int newFrameWidth, int newFrameHeight, int oldFrameWidth, int oldFrameHeight)
 {
-	//const int cResizeButtonWidth = 16;
-	//const int cResizeButtonHeight = 16;
-
-	//const int cMargin = 16;
-
-	//// Move the frame resizer (bottom right corner)
-	//CRect frameResizerRect(newFrameWidth - cResizeButtonWidth, newFrameHeight - cResizeButtonHeight, newFrameWidth, newFrameHeight);
-	//frameResizer->setViewSize(frameResizerRect);
-	//frameResizer->setMouseableArea(frameResizerRect);
-
-	// Scroll view for all modulators
-	//const CRect& oldModulatorsScrollViewRect = modulatorsScrollView->getViewSize();
-	//CRect modulatorsScrollViewRect(oldModulatorsScrollViewRect.left, oldModulatorsScrollViewRect.top, oldModulatorsScrollViewRect.bottom + (newFrameHeight - oldFrameHeight), oldModulatorsScrollViewRect.right + (newFrameWidth - oldFrameWidth));
-	//modulatorsScrollView->setViewSize(modulatorsScrollViewRect);
-	//modulatorsScrollView->setMouseableArea(modulatorsScrollViewRect);
-	//modulatorsScrollView->invalid();
 }
 
 

@@ -28,6 +28,7 @@ IDB_PNG2                PNG                     "knob1.png"
 IDB_PNG3                PNG                     "tinybutton.png"
 IDB_PNG4                PNG                     "optionmenu-unpressed.png"
 IDB_PNG5                PNG                     "optionmenu-pressed.png"
+IDB_PNG6                PNG                     "resizerbutton.png"
 #endif    // Neutral (Default) resources
 /////////////////////////////////////////////////////////////////////////////
 

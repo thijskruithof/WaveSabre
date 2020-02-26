@@ -14,7 +14,8 @@ namespace WaveSabreVstLib
 			Knob1,
 			TinyButton,
 			OptionMenuUnpressed,
-			OptionMenuPressed
+			OptionMenuPressed,
+			ResizerButton
 		};
 
 		static CBitmap *Get(ImageIds imageId);

@@ -14,7 +14,7 @@ public:
 class CFrameResizer : public CViewContainer
 {
 public:
-	CFrameResizer(int minFrameWidth, int minFrameHeight, CFrameResizerListener* listener, const CRect& size, CFrame* pParent, CBitmap* pBackground = 0);
+	CFrameResizer(int minFrameWidth, int minFrameHeight, CFrameResizerListener* listener, const CRect& size, CFrame* pParent);
 	CFrameResizer(const CFrameResizer& other);
 
 	virtual CMouseEventResult onMouseDown(CPoint& where, const long& buttons);
@@ -30,6 +30,7 @@ private:
 	int startResizeFrameWidth = 0;
 	int startResizeFrameHeight = 0;
 
+	CBitmap* icon = NULL;
 	CFrameResizerListener* listener = NULL;
 };
 
