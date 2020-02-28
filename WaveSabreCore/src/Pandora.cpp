@@ -334,11 +334,11 @@ namespace WaveSabreCore
 		case ParamIndices::Envelope4releaseDuration:	envelope4.releaseRate = sEnvelopeLinearToExponential(value); break;
 		case ParamIndices::VcfRouting:					vcfRouting = Helpers::ParamToEnum<FilterRoutingType>(value); break;
 		case ParamIndices::Vcf1type:					vcf1type = Helpers::ParamToEnum<FilterType>(value); break;
-		case ParamIndices::Vcf1Cutoff:					vcf1Cutoff = Helpers::ParamToRangedFloat(value, 0.002f, 0.7f); break;
-		case ParamIndices::Vcf1Resonance:				vcf1Resonance = Helpers::ParamToRangedFloat(value, 0.0f, 0.9f); break;
+		case ParamIndices::Vcf1Cutoff:					vcf1Cutoff = Helpers::ParamToRangedFloat(value, 0.9f, 0.002f); break;
+		case ParamIndices::Vcf1Resonance:				vcf1Resonance = Helpers::ParamToRangedFloat(value, 0.9f, 0.0f); break;
 		case ParamIndices::Vcf2type:					vcf2type = Helpers::ParamToEnum<FilterType>(value); break;
-		case ParamIndices::Vcf2Cutoff:					vcf2Cutoff = Helpers::ParamToRangedFloat(value, 0.002f, 0.7f); break;
-		case ParamIndices::Vcf2Resonance:				vcf2Resonance = Helpers::ParamToRangedFloat(value, 0.0f, 0.9f); break;
+		case ParamIndices::Vcf2Cutoff:					vcf2Cutoff = Helpers::ParamToRangedFloat(value, 0.9f, 0.002f); break;
+		case ParamIndices::Vcf2Resonance:				vcf2Resonance = Helpers::ParamToRangedFloat(value, 0.9f, 0.0f); break;
 		case ParamIndices::VcfCtrlBalance:				
 			if (value < 0.5f) 
 			{
@@ -481,11 +481,11 @@ namespace WaveSabreCore
 		case ParamIndices::Envelope4releaseDuration:	return sEnvelopeExponentialToLinear(envelope4.releaseRate);
 		case ParamIndices::VcfRouting:					return Helpers::EnumToParam<FilterRoutingType>(vcfRouting);
 		case ParamIndices::Vcf1type:					return Helpers::EnumToParam<FilterType>(vcf1type);
-		case ParamIndices::Vcf1Cutoff:					return Helpers::RangedFloatToParam(vcf1Cutoff, 0.002f, 0.7f); 
-		case ParamIndices::Vcf1Resonance:				return Helpers::RangedFloatToParam(vcf1Resonance, 0.0f, 0.9f);
+		case ParamIndices::Vcf1Cutoff:					return Helpers::RangedFloatToParam(vcf1Cutoff, 0.9f, 0.002f);
+		case ParamIndices::Vcf1Resonance:				return Helpers::RangedFloatToParam(vcf1Resonance, 0.9f, 0.0f);
 		case ParamIndices::Vcf2type:					return Helpers::EnumToParam<FilterType>(vcf2type);
-		case ParamIndices::Vcf2Cutoff:					return Helpers::RangedFloatToParam(vcf2Cutoff, 0.002f, 0.7f);
-		case ParamIndices::Vcf2Resonance:				return Helpers::RangedFloatToParam(vcf2Resonance, 0.0f, 0.9f);
+		case ParamIndices::Vcf2Cutoff:					return Helpers::RangedFloatToParam(vcf2Cutoff, 0.9f, 0.002f);
+		case ParamIndices::Vcf2Resonance:				return Helpers::RangedFloatToParam(vcf2Resonance, 0.9f, 0.0f);
 		case ParamIndices::VcfCtrlBalance:
 			if (vcf1amountParallel >= vcf2amountParallel)
 				return vcf2amountParallel * 0.5f;

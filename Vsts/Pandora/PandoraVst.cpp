@@ -279,11 +279,11 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::Envelope4releaseDuration:	setParameterDisplayAndLabel(display, label, 1000.0f / ((float) Helpers::CurrentSampleRate * ((Pandora*)getDevice())->envelope4.releaseRate), 2, " ms"); break;
 	case Pandora::ParamIndices::VcfRouting:					setParameterDisplayAndLabel(display, label, gStrFilterRoutingType[(int)((Pandora*)getDevice())->vcfRouting]); break;
 	case Pandora::ParamIndices::Vcf1type:					setParameterDisplayAndLabel(display, label, gStrFilterType[(int)((Pandora*)getDevice())->vcf1type]); break;
-	case Pandora::ParamIndices::Vcf1Cutoff:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf1Cutoff, 3); break; 
-	case Pandora::ParamIndices::Vcf1Resonance:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf1Resonance, 2); break;
+	case Pandora::ParamIndices::Vcf1Cutoff:					VstPlug::getParameterDisplayAndLabel(index, display, label); break;
+	case Pandora::ParamIndices::Vcf1Resonance:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::Vcf2type:					setParameterDisplayAndLabel(display, label, gStrFilterType[(int)((Pandora*)getDevice())->vcf2type]); break;
-	case Pandora::ParamIndices::Vcf2Cutoff:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf2Cutoff, 3); break; 
-	case Pandora::ParamIndices::Vcf2Resonance:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf2Resonance, 2); break;
+	case Pandora::ParamIndices::Vcf2Cutoff:					VstPlug::getParameterDisplayAndLabel(index, display, label); break;
+	case Pandora::ParamIndices::Vcf2Resonance:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::VcfCtrlBalance:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::Vcf2CutoffRelative:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf2CutoffRelative); break;
 	case Pandora::ParamIndices::VcfDistType:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
