@@ -122,7 +122,7 @@ namespace WaveSabreVstLib
 
 	void VstPlug::getParameterDisplayAndLabel(VstInt32 index, char* display, char* label)
 	{
-		snprintf(display, kVstExtMaxParamStrLen, "%.2f", 100.0f*device->GetParam(index));
+		_snprintf_s(display, kVstExtMaxParamStrLen+1, kVstExtMaxParamStrLen, "%.2f", 100.0f*device->GetParam(index));
 		vst_strncpy(label, "%", kVstExtMaxParamStrLen);
 	}
 
