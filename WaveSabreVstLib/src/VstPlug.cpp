@@ -1,5 +1,6 @@
 #include <WaveSabreVstLib/VstPlug.h>
 #include <WaveSabreVstLib/VstVersion.h>
+#include <stdio.h>
 
 using namespace std;
 using namespace WaveSabreCore;
