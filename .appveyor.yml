@@ -17,5 +17,5 @@ build_script:
       New-Item -ItemType Directory -Path build | Out-Null
       cd build
       cmake ..
-      msbuild /v:minimal /nologo WaveSabre.sln
+      msbuild /v:minimal /nologo WaveSabre.sln /property:Configuration=Release
       cd ..
