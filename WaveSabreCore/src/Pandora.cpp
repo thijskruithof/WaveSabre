@@ -1271,7 +1271,7 @@ namespace WaveSabreCore
 	{
 		Voice::NoteOn(note, velocity, detune, pan);
 
-		const PandoraVoice* slideFrom = NULL; //< Support later?
+		const PandoraVoice* slideFrom = nullptr; //< Support later?
 
 		gate = true;
 		inputVelocity = (float)velocity / 127.0f;
@@ -1319,9 +1319,9 @@ namespace WaveSabreCore
 		hasOwnLFO[1] = pandora->lfo2keysync != LfoSyncType::OFF || resolvedModulations.IsAffecting(ModulationDestType::LFO2RATE);
 		hasOwnLFO[2] = pandora->lfo3keysync != LfoSyncType::OFF || resolvedModulations.IsAffecting(ModulationDestType::LFO3RATE);
 
-		lfo[0] = NULL;
-		lfo[1] = NULL;
-		lfo[2] = NULL;
+		lfo[0] = nullptr;
+		lfo[1] = nullptr;
+		lfo[2] = nullptr;
 
 		if (hasOwnLFO[0])
 		{
@@ -1329,8 +1329,8 @@ namespace WaveSabreCore
 
 			if (pandora->lfo1keysync == LfoSyncType::OFF)
 				lfo[0]->SyncTo(&pandora->lfo[0]);
-			//else if (pandora->lfo1keysync == LfoSyncType::GATE && slideFrom != NULL)
-			//	lfo[0]->SyncTo((slideFrom->lfo[0] != NULL) ? slideFrom->lfo[0] : ownerChannel->GetLFO(0));
+			//else if (pandora->lfo1keysync == LfoSyncType::GATE && slideFrom != nullptr)
+			//	lfo[0]->SyncTo((slideFrom->lfo[0] != nullptr) ? slideFrom->lfo[0] : ownerChannel->GetLFO(0));
 		}
 
 		if (hasOwnLFO[1])
@@ -1339,8 +1339,8 @@ namespace WaveSabreCore
 
 			if (pandora->lfo2keysync == LfoSyncType::OFF)
 				lfo[1]->SyncTo(&pandora->lfo[1]);
-			//else if (pandora->lfo2keysync == Patch::PANDORA_PATCH_LFOSYNC_GATE && slideFrom != NULL)
-			//	lfo[1]->SyncTo((slideFrom->lfo[1] != NULL) ? slideFrom->lfo[1] : ownerChannel->GetLFO(1));
+			//else if (pandora->lfo2keysync == Patch::PANDORA_PATCH_LFOSYNC_GATE && slideFrom != nullptr)
+			//	lfo[1]->SyncTo((slideFrom->lfo[1] != nullptr) ? slideFrom->lfo[1] : ownerChannel->GetLFO(1));
 		}
 
 		if (hasOwnLFO[2])
@@ -1349,8 +1349,8 @@ namespace WaveSabreCore
 
 			if (pandora->lfo3keysync == LfoSyncType::OFF)
 				lfo[2]->SyncTo(&pandora->lfo[2]);
-			//else if (pandora->lfo3keysync == Patch::PANDORA_PATCH_LFOSYNC_GATE && slideFrom != NULL)
-			//	lfo[2]->SyncTo((slideFrom->lfo[2] != NULL) ? slideFrom->lfo[2] : ownerChannel->GetLFO(2));
+			//else if (pandora->lfo3keysync == Patch::PANDORA_PATCH_LFOSYNC_GATE && slideFrom != nullptr)
+			//	lfo[2]->SyncTo((slideFrom->lfo[2] != nullptr) ? slideFrom->lfo[2] : ownerChannel->GetLFO(2));
 		}
 
 
