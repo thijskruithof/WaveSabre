@@ -19,3 +19,10 @@ build_script:
       cmake ..
       msbuild /v:minimal /nologo WaveSabre.sln /property:Configuration=Release
       cd ..
+
+after_build:
+  - cmd: 7z a c:\projects\wavesabre\wavesabre.7z c:\projects\wavesabre\build\vsts\release\*.dll
+
+artifacts:
+  - path: wavesabre.7z
+    name: wavesabre
