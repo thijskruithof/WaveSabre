@@ -21,10 +21,12 @@ namespace WaveSabreCore
 	{
 	public:
 		static double CurrentSampleRate;
-		static int CurrentTempo;
+		static int CurrentTempo; // BPM
 		static int RandomSeed;
 
 		static void Init();
+
+		static float GetSamplesPerBeat();
 
 		static float RandFloat();
 
@@ -44,6 +46,7 @@ namespace WaveSabreCore
 		static float Clamp(float f, float min, float max);
 		static float Min(float a, float b);
 		static double Min(double a, double b);
+		static int Max(int a, int b);
 		static float Max(float a, float b);
 		static double Max(double a, double b);
 

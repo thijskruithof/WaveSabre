@@ -8,6 +8,10 @@
 #define M_PI_2 0.5f*3.14159265358979323846f
 #define M_PI_4 0.25f*3.14159265358979323846f
 
+#define PANDORA_MAX_ACTIVE_ARPEGGIONOTES		16
+#define PANDORA_MAX_TRIGGERED_ARPEGGIONOTES		256
+
+
 namespace WaveSabreCore
 {
 	static int gPandoraRandSeed = 1;
@@ -153,6 +157,7 @@ namespace WaveSabreCore
 		midiControlledSettingC = 0.0f;
 		midiControlledSettingD = 0.0f;
 
+		arpeggiator.SetDevice(this);
 
 		VoicesDetune = 1.0f; //< Always use a detune of 1, as that will give each voice a unique detune amount when unisoning. We apply proper spread in the voice.
 	}
@@ -557,9 +562,37 @@ namespace WaveSabreCore
 			lfo[2].Update(numSamples);
 		}
 
+		arpeggiator.Update(numSamples);
+
 		SynthDevice::Run(songPosition, inputs, outputs, numSamples);
 	}
 
+	void Pandora::AllNotesOff()
+	{
+		arpeggiator.AllNotesOff();
+		SynthDevice::AllNotesOff();
+	}
+
+	void Pandora::NoteOn(int note, int velocity, int deltaSamples)
+	{
+		arpeggiator.NoteOn(note, velocity, deltaSamples);
+	}
+
+	void Pandora::NoteOff(int note, int deltaSamples)
+	{
+		arpeggiator.NoteOff(note, deltaSamples);
+	}
+
+
+	void Pandora::TriggerNoteOn(int note, int velocity, int numSamplesToDefer)
+	{
+		SynthDevice::NoteOn(note, velocity, numSamplesToDefer);
+	}
+
+	void Pandora::TriggerNoteOff(int note, int numSamplesToDefer)
+	{
+		SynthDevice::NoteOff(note, numSamplesToDefer);
+	}
 
 	// LFO
 
@@ -733,6 +766,185 @@ namespace WaveSabreCore
 		break;
 		}
 	}
+
+	// Arpeggiator
+
+	Pandora::Arpeggiator::Arpeggiator()
+		: lastNoteId(0), activeNotes(PANDORA_MAX_ACTIVE_ARPEGGIONOTES),
+		triggeredNotes(PANDORA_MAX_TRIGGERED_ARPEGGIONOTES), currentStepDir(1)
+	{}
+
+
+	void Pandora::Arpeggiator::NoteOn(int note, int velocity, int numSamplesToDefer)
+	{
+		if (device->arpeggioType == Pandora::ArpeggioType::OFF)
+		{
+			device->TriggerNoteOn(note, velocity, numSamplesToDefer);
+			return;
+		}
+
+		activeNotes.Add(NoteInfo(note, velocity, lastNoteId));
+		lastNoteId++; // will wrap around eventually
+
+		// Restart arpeggio if this is the first note that's active.
+		if (activeNotes.Size() == 1)
+			arpeggioTime = -1;
+	}
+
+
+	void Pandora::Arpeggiator::NoteOff(int note, int numSamplesToDefer)
+	{
+		if (device->arpeggioType == Pandora::ArpeggioType::OFF)
+		{
+			device->TriggerNoteOff(note, numSamplesToDefer);
+			return;
+		}
+
+		int bestIndex = -1;
+		int bestId = lastNoteId + 1;
+
+		for (int i = 0; i < activeNotes.Size(); ++i)
+			if (activeNotes[i].note == note && activeNotes[i].id < bestId)
+			{
+				bestIndex = i;
+				bestId = activeNotes[i].id;
+			}
+
+		if (bestIndex >= 0)
+		{
+			activeNotes.RemoveAtIndex(bestIndex);
+
+			// Stop arpeggio if this was last note
+			if (activeNotes.Size() == 0)
+				arpeggioTime = -1;
+		}
+	}
+
+
+	void Pandora::Arpeggiator::AllNotesOff()
+	{
+		triggeredNotes.Clear();
+		activeNotes.Clear();
+		arpeggioTime = -1;
+	}
+
+
+	void Pandora::Arpeggiator::Update(int numSamples)
+	{
+		// Stop any previously triggered notes when our arpeggio is reset
+		if (arpeggioTime == -1 && triggeredNotes.Size() > 0)
+		{
+			for (int i = 0; i < triggeredNotes.Size(); ++i)
+				StopNote(i, 0);
+			triggeredNotes.Clear();
+		}
+
+
+		// Start new notes?
+		if (activeNotes.Size() > 0)
+		{
+			if (device->arpeggioType == Pandora::ArpeggioType::DOWN)
+				currentStepDir = -1;
+			else if (device->arpeggioType == Pandora::ArpeggioType::UP)
+				currentStepDir = +1;
+
+			if (arpeggioTime == -1)
+			{
+				// Arpeggio was just (re)started
+				arpeggioTime = 0;
+				arpeggioStepTime = 0;
+
+				currentActiveNoteIndex = 0;
+				currentOctaveOffset = 0;
+
+				// Start first arpeggiator note
+				StartNote(0);
+			}
+
+			float samplesPerBeat = Helpers::GetSamplesPerBeat();
+
+			int noteStepDuration = (int)((device->arpeggioInterval * samplesPerBeat) / 8);
+
+			// If we start a note, start it at this sample
+			int noteStartSample = Helpers::Max(0, noteStepDuration - arpeggioStepTime);
+
+			arpeggioTime += numSamples;
+			arpeggioStepTime += numSamples;
+
+			while (arpeggioStepTime >= noteStepDuration)
+			{
+				++currentActiveNoteIndex;
+
+				if (currentActiveNoteIndex >= activeNotes.Size())
+				{
+					// Played all active notes. Wrap to first again and step up or down an octave.
+					currentActiveNoteIndex = 0;
+					currentOctaveOffset += currentStepDir;
+
+					// Don't cover more octaves than requested.
+					if (device->arpeggioNumOctaves == 1)
+						currentOctaveOffset = 0;
+					else if (currentOctaveOffset >= device->arpeggioNumOctaves || currentOctaveOffset <= -device->arpeggioNumOctaves)
+					{
+						if (device->arpeggioType == Pandora::ArpeggioType::UPDOWN)
+						{
+							currentStepDir = -currentStepDir; // We'll have to move in the other direction!
+							currentOctaveOffset += currentStepDir; // Cancel the last step.
+							currentOctaveOffset += currentStepDir; // And go one step further in the right direction.
+						}
+						else
+						{
+							currentOctaveOffset = 0; // Wrap to 0 octaves offset, so we can restart from there.
+						}
+					}
+				}
+
+				// Start a new note
+				StartNote(noteStartSample);
+				arpeggioStepTime -= noteStepDuration; // Wrap around
+				noteStartSample += noteStepDuration; // Next note will only be started noteStepDuration samples later... if it's triggered at all
+			}
+
+			// Stop any notes that needed stopping.
+			int numStopped = 0;
+			while (numStopped < triggeredNotes.Size() && triggeredNotes[numStopped].stopTime < arpeggioTime)
+			{
+				int stopSampleTime = triggeredNotes[numStopped].stopTime - (arpeggioTime - numSamples);
+				StopNote(numStopped, stopSampleTime);
+				++numStopped;
+			}
+			if (numStopped > 0)
+				triggeredNotes.RemoveOrderedAtIndex(0, numStopped);
+		}
+	}
+
+
+	void Pandora::Arpeggiator::StartNote(int samplesToDefer)
+	{
+		int note = activeNotes[currentActiveNoteIndex].note + currentOctaveOffset * 12;
+
+		float samplesPerBeat = Helpers::GetSamplesPerBeat();
+
+		int stopTime = arpeggioTime + (int)((device->arpeggioNoteDuration * samplesPerBeat) / 8);
+
+		device->TriggerNoteOn(note, activeNotes[currentActiveNoteIndex].velocity, samplesToDefer);
+		triggeredNotes.Add(TriggeredNote(note, stopTime));
+	}
+
+
+	void Pandora::Arpeggiator::StopNote(int triggeredNoteIndex, int samplesToDefer)
+	{
+		device->TriggerNoteOff(triggeredNotes[triggeredNoteIndex].note, samplesToDefer);
+
+		//#ifndef DEMO
+		//		{
+		//			char s[256];
+		//			sprintf_s(s,256, "Arpeggio: -- Stopped note %d\n", triggeredNotes[triggeredNoteIndex].note);
+		//			OutputDebugString(s);
+		//		}	
+		//#endif
+	}
+
 
 
 	// Voice
@@ -1238,9 +1450,9 @@ namespace WaveSabreCore
 			double slideScalar3 = 1.0;/* + slideInitialModifierOsc3 * slideAmount;*/
 
 			// increment time
-			osc1time += Helpers::Max(osc1timestep * osc1timeModifier * slideScalar1, 0);
-			osc2time += Helpers::Max(osc2timestep * osc2timeModifier * slideScalar2, 0);
-			osc3time += Helpers::Max(osc3timestep * osc3timeModifier * slideScalar3, 0);
+			osc1time += Helpers::Max(osc1timestep * osc1timeModifier * slideScalar1, 0.0);
+			osc2time += Helpers::Max(osc2timestep * osc2timeModifier * slideScalar2, 0.0);
+			osc3time += Helpers::Max(osc3timestep * osc3timeModifier * slideScalar3, 0.0);
 
 			// sync osc2?
 			if (osc1time >= 1.0f && pandora->osc2sync)

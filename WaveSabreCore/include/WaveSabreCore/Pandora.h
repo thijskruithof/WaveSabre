@@ -113,6 +113,10 @@ namespace WaveSabreCore
 
 		virtual void Run(double songPosition, float** inputs, float** outputs, int numSamples);
 
+		virtual void AllNotesOff();
+		virtual void NoteOn(int note, int velocity, int deltaSamples);
+		virtual void NoteOff(int note, int deltaSamples);
+
 		static void sParamIndexToModulatorIndices(int index, int* modParamIndex, int* modIndex, int* destIndex);
 
 	public:
@@ -433,6 +437,11 @@ namespace WaveSabreCore
 	private:
 		void RecalculateUsedModulationSourcesMasks(AllModulationsType<UnresolvedModulationType>& allModulations, AllModulationsType<UnresolvedModulationType>::ModulationsType& mods);
 
+		// Called by arpeggiator (will toggle the actual voices)
+		void TriggerNoteOn(int note, int velocity, int numSamplesToDefer);
+		void TriggerNoteOff(int note, int numSamplesToDefer);
+
+
 		class LFO
 		{
 		public:
@@ -543,6 +552,58 @@ namespace WaveSabreCore
 			const EnvelopeSettings& settings;
 		};
 
+		class Arpeggiator
+		{
+		public:
+			Arpeggiator();
+
+			void SetDevice(Pandora* device) { this->device = device; }
+
+			void NoteOn(int note, int velocity, int numSamplesToDefer);
+			void NoteOff(int note, int numSamplesToDefer);
+			void AllNotesOff();
+
+			void Update(int numSamples);
+
+		private:
+			void StartNote(int samplesToDefer);
+			void StopNote(int triggeredNoteIndex, int samplesToDefer);
+
+			Pandora* device;
+
+			struct NoteInfo
+			{
+				int note;
+				int velocity;
+				int id;
+
+				NoteInfo() {}
+				NoteInfo(int note, int velocity, int id)
+					: note(note), velocity(velocity), id(id) {}
+			};
+			FixedSizeList<NoteInfo> activeNotes;
+			unsigned int lastNoteId;
+
+			int arpeggioTime; // in samples
+			int arpeggioStepTime; // in samples, wraps each step
+
+			int currentActiveNoteIndex; // index into the activeNotes array
+			int currentOctaveOffset;
+			int currentStepDir; // +1 is up, -1 is down
+
+			struct TriggeredNote
+			{
+				int note;
+				int stopTime; // in arpeggio time
+
+				TriggeredNote() {}
+				TriggeredNote(int note, int stopTime)
+					: note(note), stopTime(stopTime) {}
+			};
+			FixedSizeList<TriggeredNote> triggeredNotes;
+		};
+
+
 		class PandoraVoice : public Voice
 		{
 		public:
@@ -621,6 +682,7 @@ namespace WaveSabreCore
 
 
 		LFO lfo[3];
+		Arpeggiator arpeggiator;
 	};
 }
 

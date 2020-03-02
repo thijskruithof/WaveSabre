@@ -121,7 +121,7 @@ static __declspec(naked) double __vectorcall fpuCos(double x)
 namespace WaveSabreCore
 {
 	double Helpers::CurrentSampleRate = 44100.0;
-	int Helpers::CurrentTempo = 120;
+	int Helpers::CurrentTempo = 120; // BPM
 	int Helpers::RandomSeed = 1;
 
 	static const int fastCosTabLog2Size = 10; // size = 1024
@@ -137,6 +137,16 @@ namespace WaveSabreCore
 			double phase = double(i) * ((M_PI * 2) / fastCosTabSize);
 			fastCosTab[i] = fpuCos(phase);
 		}
+	}
+
+	float Helpers::GetSamplesPerBeat()
+	{
+		// 'beatsPerMinute' beats take 60.0f seconds,
+		// so 1 beat takes 60/beatsPerMinute seconds
+		float secondsPerBeat = 60.0f / (float)CurrentTempo;
+
+		// every second equals 44100 samples.
+		return (float)CurrentSampleRate * secondsPerBeat;
 	}
 
 	float Helpers::RandFloat()
@@ -220,6 +230,11 @@ namespace WaveSabreCore
 	float Helpers::Min(float a, float b)
 	{
 		return (a < b) ? a : b;
+	}
+
+	int Helpers::Max(int a, int b)
+	{
+		return (a > b) ? a : b;
 	}
 
 	float Helpers::Max(float a, float b)
