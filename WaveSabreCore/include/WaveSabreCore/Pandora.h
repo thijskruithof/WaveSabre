@@ -422,8 +422,8 @@ namespace WaveSabreCore
 		// Arpeggio:
 		ArpeggioType arpeggioType;
 		int arpeggioNumOctaves;
-		__int64 arpeggioInterval;
-		__int64 arpeggioNoteDuration;
+		int arpeggioInterval;
+		int arpeggioNoteDuration;
 
 		// Modulation:
 		AllModulationsType<UnresolvedModulationType> modulations;

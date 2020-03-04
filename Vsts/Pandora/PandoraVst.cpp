@@ -121,6 +121,19 @@ const char* gStrModulationDepthRange[(int)Pandora::ModulationDepthRange::COUNT] 
 };
 
 
+const char* gStrArpeggioInterval[9] = {
+	"1/8",
+	"2/8",
+	"4/8",
+	"1",
+	"2",
+	"4",
+	"8",
+	"16",
+	"32"
+};
+
+
 AudioEffect *createEffectInstance(audioMasterCallback audioMaster)
 {
 	Helpers::Init();
@@ -295,8 +308,8 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::UnisonSpread:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->unisonSpread, 2); break;
 	case Pandora::ParamIndices::ArpeggioType:				setParameterDisplayAndLabel(display, label, gStrArpeggioType[(int)((Pandora*)getDevice())->arpeggioType]); break;
 	case Pandora::ParamIndices::ArpeggioNumOctaves:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->arpeggioNumOctaves); break;
-	case Pandora::ParamIndices::ArpeggioInterval:			VstPlug::getParameterDisplayAndLabel(index, display, label); break;
-	case Pandora::ParamIndices::ArpeggioNoteDuration:		VstPlug::getParameterDisplayAndLabel(index, display, label); break;
+	case Pandora::ParamIndices::ArpeggioInterval:			setParameterDisplayAndLabel(display, label, gStrArpeggioInterval[(int)Helpers::Clamp(log2f(((Pandora*)getDevice())->arpeggioInterval), 0.0f, 8.0f)]); break;
+	case Pandora::ParamIndices::ArpeggioNoteDuration:		setParameterDisplayAndLabel(display, label, gStrArpeggioInterval[(int)Helpers::Clamp(log2f(((Pandora*)getDevice())->arpeggioNoteDuration), 0.0f, 8.0f)]); break;
 	case Pandora::ParamIndices::Pan:						setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->VoicesPan, 2); break;
 	
 	// Modulator
