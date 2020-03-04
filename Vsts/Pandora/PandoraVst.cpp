@@ -308,8 +308,8 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::UnisonSpread:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->unisonSpread, 2); break;
 	case Pandora::ParamIndices::ArpeggioType:				setParameterDisplayAndLabel(display, label, gStrArpeggioType[(int)((Pandora*)getDevice())->arpeggioType]); break;
 	case Pandora::ParamIndices::ArpeggioNumOctaves:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->arpeggioNumOctaves); break;
-	case Pandora::ParamIndices::ArpeggioInterval:			setParameterDisplayAndLabel(display, label, gStrArpeggioInterval[(int)Helpers::Clamp(log2f(((Pandora*)getDevice())->arpeggioInterval), 0.0f, 8.0f)]); break;
-	case Pandora::ParamIndices::ArpeggioNoteDuration:		setParameterDisplayAndLabel(display, label, gStrArpeggioInterval[(int)Helpers::Clamp(log2f(((Pandora*)getDevice())->arpeggioNoteDuration), 0.0f, 8.0f)]); break;
+	case Pandora::ParamIndices::ArpeggioInterval:			setParameterDisplayAndLabel(display, label, gStrArpeggioInterval[(int)Helpers::Clamp(log2f((float)((Pandora*)getDevice())->arpeggioInterval), 0.0f, 8.0f)]); break;
+	case Pandora::ParamIndices::ArpeggioNoteDuration:		setParameterDisplayAndLabel(display, label, gStrArpeggioInterval[(int)Helpers::Clamp(log2f((float)((Pandora*)getDevice())->arpeggioNoteDuration), 0.0f, 8.0f)]); break;
 	case Pandora::ParamIndices::Pan:						setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->VoicesPan, 2); break;
 	
 	// Modulator
