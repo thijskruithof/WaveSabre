@@ -81,6 +81,19 @@ namespace WaveSabreCore
 		return x;
 	}
 
+	// Smooth clipping, using an approximation for arctan.
+	// For x < 0.5 is nearly equals clip(x)=x, and clip(3) is nearly 1
+	// http://www.musicdsp.org/showArchiveComment.php?ArchiveID=238
+	static __forceinline float gPandoraSoftClip(float x)
+	{
+		if (x < -3)
+			return -1;
+		else if (x > 3)
+			return 1;
+		else
+			return x * (27 + x * x) / (27 + 9 * x * x);
+	}
+
 
 #define PANDORA_VOICE_NOISE_LOOP_SIZE	1024	// in samples (44 samples ~= 1 ms)
 
@@ -142,8 +155,7 @@ namespace WaveSabreCore
 		oscStringMix = 0;
 		doSlide = false;
 		slideSpeed = 0.9f;
-		doFilterDist = false;
-		filterDistPassive = false;
+		filterDistType = FilterDistortionType::NONE;
 		filterDistDrive = 0.0f;
 		filterDistShape = 0.0f;
 		osc2sync = false;
@@ -357,10 +369,7 @@ namespace WaveSabreCore
 			}
 			break;
 		case ParamIndices::Vcf2CutoffRelative:			vcf2CutoffRelative = Helpers::ParamToBoolean(value); break;
-		case ParamIndices::VcfDistType:				
-			doFilterDist = Helpers::ParamToRangedInt(value, 0, 2) != 0;
-			filterDistPassive = Helpers::ParamToRangedInt(value, 0, 2) == 1;
-			break;
+		case ParamIndices::VcfDistType:					filterDistType = Helpers::ParamToEnum<FilterDistortionType>(value); break;
 		case ParamIndices::FilterDistDrive:				filterDistDrive = value; break;
 		case ParamIndices::FilterDistShape:				filterDistShape = value; break;
 		case ParamIndices::DoSlide:						doSlide = Helpers::ParamToBoolean(value); break;
@@ -497,7 +506,7 @@ namespace WaveSabreCore
 			else
 				return 1.0f - 0.5f * vcf1amountParallel;
 		case ParamIndices::Vcf2CutoffRelative:			return Helpers::BooleanToParam(vcf2CutoffRelative);
-		case ParamIndices::VcfDistType:					return Helpers::RangedIntToParam(doFilterDist ? (filterDistPassive ? 1 : 2) : 0, 0, 2);
+		case ParamIndices::VcfDistType:					return Helpers::EnumToParam<FilterDistortionType>(filterDistType);
 		case ParamIndices::FilterDistDrive:				return filterDistDrive;
 		case ParamIndices::FilterDistShape:				return filterDistShape;
 		case ParamIndices::DoSlide:						return Helpers::BooleanToParam(doSlide);
@@ -946,6 +955,129 @@ namespace WaveSabreCore
 	}
 
 
+	Pandora::Distortion::SimpleFilter::SimpleFilter(float cutoff, float resonance)
+	{
+		// http://www.musicdsp.org/showone.php?id=38
+
+		float r = 0.1f + 1.3f * resonance; // from sqrt(2) to 0.1. With sqrt(2) being minimum res, 0.1 max res.
+		float c = 1.0f / tanf(M_PI_2 * 0.9f * cutoff + 0.02f);
+
+		a1 = 1.0f / (1.0f + r * c + c * c);
+		a2 = 2.0f * a1;
+		b1 = 2.0f * (1.0f - c * c) * a1;
+		b2 = (1.0f - r * c + c * c) * a1;
+
+		in_2 = 0;
+		in_1 = 0;
+		out_2 = 0;
+		out_1 = 0;
+	}
+
+	float Pandora::Distortion::SimpleFilter::Calc(float input)
+	{
+		float output =
+			a1 * input +
+			a2 * in_1 +
+			a1 * in_2 -
+			b1 * out_1 -
+			b2 * out_2;
+
+		// Store output
+		out_2 = out_1;
+		out_1 = output;
+
+		// Store new inputs
+		in_2 = in_1;
+		in_1 = input;
+
+		return output;
+	}
+
+	float Pandora::Distortion::Calc(float input)
+	{
+		if (device->filterDistType == FilterDistortionType::SIMPLE)
+		{
+			float power = powf(4.0f, device->filterDistDrive);
+			return gPandoraSoftClip(input * power);
+		}
+
+		// Currently not tweakable constants:
+		const float hiLimit = 0.8f;
+		const float loLimit = 0.3f;
+		const float gain = 0.8f;
+
+
+		float distDrive = (device->filterDistDrive * 30.0f) + 1.0f;
+		float distShape = device->filterDistShape;
+		distDrive = distDrive * distDrive;
+
+		float falloff = 1 - 0.1f * distShape;
+
+		float distSignal = input * distDrive;
+
+
+		if (!isClipping)
+		{
+			if (distSignal > hiLimit)
+			{
+				isClipping = true;
+				distSignal = hiLimit;
+				clipVal = distSignal;
+			}
+			else if (distSignal < -hiLimit)
+			{
+				isClipping = true;
+				distSignal = -hiLimit;
+				clipVal = distSignal;
+			}
+		}
+		else
+		{
+			if (clipVal > 0)
+			{
+				if (distSignal < -hiLimit)
+				{
+					// We went even below our bottom limit, re-clip from there!
+					isClipping = true;
+					distSignal = -hiLimit;
+					clipVal = distSignal;
+				}
+				else if (distSignal < clipVal)
+				{
+					isClipping = false;
+				}
+				else
+				{
+					distSignal = clipVal = (clipVal - loLimit) * falloff + loLimit;
+				}
+			}
+			else
+			{
+				if (distSignal > hiLimit)
+				{
+					// We went even above our top limit, re-clip from there!
+					isClipping = true;
+					distSignal = hiLimit;
+					clipVal = distSignal;
+				}
+				else if (distSignal > clipVal)
+				{
+					isClipping = false;
+				}
+				else
+				{
+					distSignal = clipVal = (clipVal + loLimit) * falloff - loLimit;
+				}
+			}
+		}
+
+		// Filter 
+		distSignal = filter.Calc(distSignal);
+
+		// Output
+		return distSignal * gain;
+	}
+
 
 	// Voice
 
@@ -963,6 +1095,8 @@ namespace WaveSabreCore
 			for (int i = 0; i < PANDORA_VOICE_NOISE_LOOP_SIZE; ++i)
 				gPandoraNoiseLoopBuffer[i] = gPandoraRandFloat();
 		}
+
+		filterDistortion.SetDevice(pandora);
 	}
 
 	Pandora::PandoraVoice::~PandoraVoice()
@@ -1293,20 +1427,8 @@ namespace WaveSabreCore
 					}
 
 					//// FILTER DISTORTION
-					//if (pandora->doFilterDist)
-					//{
-					//	float resultL;
-
-					//	filterDistortion.drive = pandora->filterDistDrive;
-					//	filterDistortion.shape = pandora->filterDistShape;
-					//	filterDistortion.onlySoftClip = pandora->filterDistPassive;
-
-					//	// Hook up quite inefficient distortion...
-					//	filterDistortion.RenderToBuffer(1, &filteroutput, &resultL);
-
-					//	filteroutput = resultL;
-					//}
-
+					if (pandora->filterDistType != FilterDistortionType::NONE)
+						filteroutput = filterDistortion.Calc(filteroutput);
 
 					if ((int)pandora->vcfRouting > (int)FilterRoutingType::SINGLE)
 					{

@@ -69,6 +69,12 @@ const char* gStrFilterType[(int)Pandora::FilterType::COUNT] = {
 	"NOTCH"
 };
 
+const char* gStrFilterDistType[(int)Pandora::FilterDistortionType::COUNT] = {
+	"NONE",
+	"SIMPLE",
+	"FANCY"
+};
+
 const char* gStrFilterRoutingType[(int)Pandora::FilterRoutingType::COUNT] = {
 	"NONE",
 	"SINGLE",
@@ -299,7 +305,7 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::Vcf2Resonance:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::VcfCtrlBalance:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
 	case Pandora::ParamIndices::Vcf2CutoffRelative:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->vcf2CutoffRelative); break;
-	case Pandora::ParamIndices::VcfDistType:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
+	case Pandora::ParamIndices::VcfDistType:				setParameterDisplayAndLabel(display, label, gStrFilterDistType[(int)((Pandora*)getDevice())->filterDistType]); break;
 	case Pandora::ParamIndices::FilterDistDrive:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->filterDistDrive, 2); break;
 	case Pandora::ParamIndices::FilterDistShape:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->filterDistShape, 2); break;
 	case Pandora::ParamIndices::DoSlide:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->doSlide); break;

@@ -9,6 +9,7 @@
 
 #define PANDORA_MAX_MODULATORS_PER_DEST 8
 #define PANDORA_NUM_MODULATOR_DEST 22
+#define PANDORA_DISTORTION_DELAYBUFFERSIZE 22100
 
 namespace WaveSabreCore
 {
@@ -166,6 +167,15 @@ namespace WaveSabreCore
 			SINGLE,
 			SERIAL,
 			PARALLEL,
+
+			COUNT
+		};
+
+		enum class FilterDistortionType
+		{
+			NONE = 0,
+			SIMPLE,
+			FANCY,
 
 			COUNT
 		};
@@ -407,8 +417,8 @@ namespace WaveSabreCore
 		float vcf2amountParallel;
 		bool vcf2CutoffRelative;
 
-		bool doFilterDist;
-		bool filterDistPassive;
+		// Filter distortion:
+		FilterDistortionType filterDistType;
 		float filterDistDrive;
 		float filterDistShape;
 
@@ -603,6 +613,35 @@ namespace WaveSabreCore
 			FixedSizeList<TriggeredNote> triggeredNotes;
 		};
 
+		class Distortion
+		{
+		public:
+			Distortion() : filter(1.0f, 1.0f) {}
+
+			void SetDevice(Pandora* device) { this->device = device; }
+
+			float Calc(float input);
+
+		private:
+			class SimpleFilter
+			{
+			public:
+				SimpleFilter(float cutoff, float resonance);
+
+				float Calc(float input);
+
+			private:
+				float a1, a2, b1, b2;
+				float in_1, in_2;
+				float out_1, out_2;
+			};
+
+			bool isClipping = false;
+			float clipVal = 0;
+
+			SimpleFilter filter;
+			Pandora* device = nullptr;
+		};
 
 		class PandoraVoice : public Voice
 		{
@@ -675,7 +714,7 @@ namespace WaveSabreCore
 			Envelope envelope4;
 
 			// filter distortion
-			//EffectDistortion filterDistortion;
+			Distortion filterDistortion;
 
 			//int unisonVoiceIndex; // index in the set of unison voices	
 		};
