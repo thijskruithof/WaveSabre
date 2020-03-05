@@ -34,5 +34,4 @@ deploy:
   artifact: wavesabre
   draft: false
   prerelease: true
-  tag: $(appveyor_repo_tag_name)
   description: "WaveSabre - Automated build of Master branch. Includes all compiled binaries in a single zip file."
