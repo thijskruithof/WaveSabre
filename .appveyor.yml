@@ -26,3 +26,12 @@ after_build:
 artifacts:
   - path: wavesabre.7z
     name: wavesabre
+
+deploy:
+  provider: GitHub
+  auth_token:
+    secure: 4PgCYMcujvIT00In2yBlHm9bDx5Sg+XcyNYnaLg+R1qmW2dhtPdlMAr2saR8h8v6
+  artifact: wavesabre
+  draft: false
+  prerelease: true
+  description: "WaveSabre"
