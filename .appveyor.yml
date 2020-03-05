@@ -21,7 +21,7 @@ build_script:
       cd ..
 
 after_build:
-  - cmd: 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_VERSION%.zip c:\projects\wavesabre\build\vsts\release\*.dll
+  - cmd: 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip c:\projects\wavesabre\build\vsts\release\*.dll
 
 artifacts:
   - path: '*.zip'
@@ -34,4 +34,5 @@ deploy:
   artifact: wavesabre
   draft: false
   prerelease: true
+  tag: $(appveyor_repo_tag_name)
   description: "WaveSabre - Automated build of Master branch. Includes all compiled binaries in a single zip file."
