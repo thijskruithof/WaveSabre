@@ -21,10 +21,10 @@ build_script:
       cd ..
 
 after_build:
-  - cmd: 7z a c:\projects\wavesabre\wavesabre.7z c:\projects\wavesabre\build\vsts\release\*.dll
+  - cmd: 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_VERSION%.zip c:\projects\wavesabre\build\vsts\release\*.dll
 
 artifacts:
-  - path: wavesabre.7z
+  - path: '*.zip'
     name: wavesabre
 
 deploy:
@@ -34,4 +34,4 @@ deploy:
   artifact: wavesabre
   draft: false
   prerelease: true
-  description: "WaveSabre"
+  description: "WaveSabre - Automated build of Master branch. Includes all compiled binaries in a single zip file."
