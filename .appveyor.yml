@@ -1,6 +1,12 @@
 version: '{build}'
 image: Visual Studio 2013
 
+skip_tags: true
+
+branches:
+  only:
+    - master
+
 cache:
   - Vst3.x
 
