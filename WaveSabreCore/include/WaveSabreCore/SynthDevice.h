@@ -65,6 +65,12 @@ namespace WaveSabreCore
 
 			double vibratoPhase;
 
+		protected:
+			int getSlideSamples() const
+			{
+				return slideSamples;
+			}
+
 		private:
 			bool slideActive;
 			double slideDelta;

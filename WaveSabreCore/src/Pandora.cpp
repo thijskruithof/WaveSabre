@@ -1686,6 +1686,10 @@ namespace WaveSabreCore
 			(double)gPandoraRandFloatNormalized(),	//< start with a random time
 			(double)gPandoraRandFloatNormalized()	//< start with a random time
 		);
+
+		slideInitialModifierOsc1 = 0.0;
+		slideInitialModifierOsc2 = 0.0;
+		slideInitialModifierOsc3 = 0.0;
 	}
 
 	void Pandora::PandoraVoice::NoteOff()
@@ -1714,14 +1718,8 @@ namespace WaveSabreCore
 
 		slideAmount = 1;
 
-		// TODO: Calculate exponential decay factor for slide so that:
-		// f(x) = g^x
-		// f(0) = 1
-		// f(slideSamples) = ~0.001
-		// so:
-		// g^slideSamples = ~0.001
-
-		slideDecayFactor = 0.0f;
+		// Calculate multiplier to go from 1 to 0.001 in 'slideSamples' samples.
+		slideDecayFactor = (float)pow(0.001, 1.0 / (double)getSlideSamples());
 
 		slideInitialModifierOsc1 = (originalOsc1TimeStep / osc1timestep) - 1;
 		slideInitialModifierOsc2 = (originalOsc2TimeStep / osc2timestep) - 1;
