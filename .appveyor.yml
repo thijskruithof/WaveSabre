@@ -23,12 +23,15 @@ build_script:
       New-Item -ItemType Directory -Path build | Out-Null
       cd build
       cmake ..
+      cd ..
+      msbuild /v:minimal /nologo Tools.sln /property:Configuration=Release
+      cd build
       $env:CL="/DRELEASE_VERSION#$env:APPVEYOR_BUILD_NUMBER"
       msbuild /v:minimal /nologo WaveSabre.sln /property:Configuration=Release
       cd ..
 
 after_build:
-  - cmd: 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip c:\projects\wavesabre\build\vsts\release\*.dll
+  - cmd: 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip c:\projects\wavesabre\build\vsts\release\*.dll c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.config c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.dll c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.exe c:\projects\wavesabre\ProjectManager\bin\Release\*.config c:\projects\wavesabre\ProjectManager\bin\Release\*.dll c:\projects\wavesabre\ProjectManager\bin\Release\*.exe c:\projects\wavesabre\build\WaveSabreStandAlonePlayer\Release\*.exe
 
 artifacts:
   - path: '*.zip'
