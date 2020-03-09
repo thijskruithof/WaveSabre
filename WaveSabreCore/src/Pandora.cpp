@@ -394,8 +394,18 @@ namespace WaveSabreCore
 				}
 				break;
 			case ModulatorParamIndices::DepthSource:		mod.depthSource = Helpers::ParamToEnum<ModulationDepthSourceType>(value); break;
-			case ModulatorParamIndices::ConstantDepth:		mod.constantDepth = Helpers::ParamToRangedFloat(value, -1.0f, 1.0f); break;
-			case ModulatorParamIndices::ConstantDepthRange:	mod.constantDepthRange = Helpers::ParamToEnum<ModulationDepthRange>(value); break;
+			case ModulatorParamIndices::ConstantDepth:		
+				{
+					mod.constantDepth = Helpers::ParamToRangedFloat(value, -1.0f, 1.0f);
+					UpdateActiveVoicesConstantDepth((ModulationDestType)destIndex, modIndex, mod);
+				}
+				break;
+			case ModulatorParamIndices::ConstantDepthRange:	
+				{
+					mod.constantDepthRange = Helpers::ParamToEnum<ModulationDepthRange>(value);
+					UpdateActiveVoicesConstantDepth((ModulationDestType)destIndex, modIndex, mod);
+				}
+				break;
 			}
 		}
 		break;
@@ -417,6 +427,20 @@ namespace WaveSabreCore
 		allModulations.usedSourcesMask = 0;
 		for (int i =0; i < PANDORA_NUM_MODULATOR_DEST; ++i)
 			allModulations.usedSourcesMask = allModulations.usedSourcesMask | allModulations.modulationsPerDest[i].usedSourcesMask;
+	}
+
+
+	void Pandora::UpdateActiveVoicesConstantDepth(ModulationDestType dest, int modIndex, const UnresolvedModulationType& unresolvedModulation)
+	{
+		float constantDepth = unresolvedModulation.constantDepth * sModulationDepthRangeFactor[(int)unresolvedModulation.constantDepthRange];
+
+		for (int i = 0; i < maxVoices; ++i)
+		{
+			if (!voices[i]->IsOn)
+				continue;
+
+			((PandoraVoice*)voices[i])->UpdateResolvedConstantDepth(dest, modIndex, constantDepth);
+		}
 	}
 
 
@@ -1824,6 +1848,11 @@ namespace WaveSabreCore
 			ResolveModulations(resolvedModulations.modulationsPerDest[i], pandora->modulations.modulationsPerDest[i]);
 
 		resolvedModulations.usedSourcesMask = pandora->modulations.usedSourcesMask;
+	}
+
+	void Pandora::PandoraVoice::UpdateResolvedConstantDepth(ModulationDestType dest, int modIndex, float newConstantDepth)
+	{
+		resolvedModulations.modulationsPerDest[(int)dest].modulations[modIndex].constantDepth = newConstantDepth;
 	}
 
 

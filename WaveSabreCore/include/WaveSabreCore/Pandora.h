@@ -442,6 +442,7 @@ namespace WaveSabreCore
 
 	private:
 		void RecalculateUsedModulationSourcesMasks(AllModulationsType<UnresolvedModulationType>& allModulations, AllModulationsType<UnresolvedModulationType>::ModulationsType& mods);
+		void UpdateActiveVoicesConstantDepth(ModulationDestType dest, int modIndex, const UnresolvedModulationType& unresolvedModulation);
 
 		// Called by arpeggiator (will toggle the actual voices)
 		void TriggerNoteOn(int note, int velocity, int numSamplesToDefer);
@@ -651,6 +652,8 @@ namespace WaveSabreCore
 			virtual void NoteOn(int note, int velocity, float detune, float pan);
 			virtual void NoteSlide(int note);
 			virtual void NoteOff();
+
+			void UpdateResolvedConstantDepth(ModulationDestType destIndex, int modIndex, float newConstantDepth);
 
 		private:
 			void Start(int note, float velocity, float detune, double osc1startTime, double osc2startTime, double osc3startTime);
