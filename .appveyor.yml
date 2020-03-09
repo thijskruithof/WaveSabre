@@ -29,22 +29,19 @@ build_script:
       cd ..
 
 after_build:
-  - cmd: >-
-      cd \projects\wavesabre
-      mkdir pkg
-      cd pkg
-      mkdir VSTs
-      mkdir Tools
-      copy c:\projects\wavesabre\LICENSE .
-      copy c:\projects\wavesabre\README.md .
-      copy c:\projects\wavesabre\build\vsts\release\*.dll VSTs
-      copy c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.config Tools
-      copy c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.exe Tools
-      copy c:\projects\wavesabre\ProjectManager\bin\Release\*.config Tools
-      copy c:\projects\wavesabre\ProjectManager\bin\Release\*.dll Tools
-      copy c:\projects\wavesabre\ProjectManager\bin\Release\*.exe Tools
-      copy c:\projects\wavesabre\build\WaveSabreStandAlonePlayer\Release\*.exe Tools
-      7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip *.* -r      
+  - mkdir c:\projects\wavesabre\pkg
+  - mkdir c:\projects\wavesabre\pkg\VSTs
+  - mkdir c:\projects\wavesabre\pkg\Tools
+  - copy c:\projects\wavesabre\LICENSE c:\projects\wavesabre\pkg
+  - copy c:\projects\wavesabre\README.md c:\projects\wavesabre\pkg
+  - copy c:\projects\wavesabre\build\vsts\release\*.dll c:\projects\wavesabre\pkg\VSTs
+  - copy c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.config c:\projects\wavesabre\pkg\Tools
+  - copy c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.exe c:\projects\wavesabre\pkg\Tools
+  - copy c:\projects\wavesabre\ProjectManager\bin\Release\*.config c:\projects\wavesabre\pkg\Tools
+  - copy c:\projects\wavesabre\ProjectManager\bin\Release\*.dll c:\projects\wavesabre\pkg\Tools
+  - copy c:\projects\wavesabre\ProjectManager\bin\Release\*.exe c:\projects\wavesabre\pkg\Tools
+  - copy c:\projects\wavesabre\build\WaveSabreStandAlonePlayer\Release\*.exe c:\projects\wavesabre\pkg\Tools
+  - 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip c:\projects\wavesabre\pkg\* -r      
 
 artifacts:
   - path: '*.zip'
