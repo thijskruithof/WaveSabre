@@ -29,7 +29,7 @@ build_script:
       cd ..
 
 after_build:
-  - cmd: 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip c:\projects\wavesabre\build\vsts\release\*.dll c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.config c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.dll c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.exe c:\projects\wavesabre\ProjectManager\bin\Release\*.config c:\projects\wavesabre\ProjectManager\bin\Release\*.dll c:\projects\wavesabre\ProjectManager\bin\Release\*.exe c:\projects\wavesabre\build\WaveSabreStandAlonePlayer\Release\*.exe
+  - cmd: 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip c:\projects\wavesabre\build\vsts\release\*.dll c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.config c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.exe c:\projects\wavesabre\ProjectManager\bin\Release\*.config c:\projects\wavesabre\ProjectManager\bin\Release\*.dll c:\projects\wavesabre\ProjectManager\bin\Release\*.exe c:\projects\wavesabre\build\WaveSabreStandAlonePlayer\Release\*.exe
 
 artifacts:
   - path: '*.zip'
