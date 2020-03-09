@@ -66,8 +66,34 @@ namespace WaveSabreVstLib
 
 	void VstEditor::valueChanged(CControl *control)
 	{
+		if (control == aboutButton)
+		{
+			if (((CKickButton*)control)->getValue() == 1.0f)
+				showAbout();
+			return;
+		}
+
 		effect->setParameterAutomated(control->getTag(), control->getValue());
 		control->setDirty();
+	}
+
+	const char* sAboutText =
+		"https://github.com/thijskruithof/WaveSabre\n"
+		"\n"
+		"\n"
+		"Copyright for portions of project WaveSabre (forked by Inque) are held by WabeSabre Team 2012-2019 as part of project WaveSabre. All other copyright for project WaveSabre (forked by Inque) are held by Inque, 2020.\n"
+		"\n"
+		"Permission is hereby granted, free of charge, to any person obtaining a copy of this softwareand associated documentation files(the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and /or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions :\n"
+		"\n"
+		"The above copyright noticeand this permission notice shall be included in all copies or substantial portions of the Software.\n"
+		"\n"
+		"THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+		"\n"
+		"VST PlugIn Technology by Steinberg Media Technologies. VST is a trademark and software of Steinberg Media Technologies GmbH.\n";
+
+	void VstEditor::showAbout()
+	{
+		MessageBoxA((HWND)systemWindow, sAboutText, "About", MB_ICONINFORMATION | MB_OK);
 	}
 
 	bool VstEditor::open(void *ptr)
@@ -93,6 +119,29 @@ namespace WaveSabreVstLib
 		brand_label->setFontColor(VSTGUI::kWhiteCColor);
 		brand_label->setTransparency(false);
 		addTextLabel(LeftMargin + 2, BuildVersionTopMargin + 20, 300, BaseSize, build_label_text, kNormalFont, kLeftText);
+
+		// About button
+		CBitmap* switchImage = ImageManager::Get(ImageManager::ImageIds::TinyButton);
+
+		aboutButton = new CKickButton(CRect(
+			LeftMargin + build_label_width + 8,
+			BuildVersionTopMargin + (BaseSize - switchImage->getHeight() / 2) / 2,
+			LeftMargin + build_label_width + 8 + switchImage->getWidth(),
+			BuildVersionTopMargin + (BaseSize - switchImage->getHeight() / 2) / 2 + switchImage->getHeight()/2),
+			this,
+			-1, // tag
+			switchImage->getHeight() / 2,
+			switchImage);
+		aboutButton->setTransparency(true);
+		frame->addView(aboutButton);
+
+		addTextLabel(
+			LeftMargin + build_label_width + 10 + switchImage->getWidth(), 
+			BuildVersionTopMargin,
+			200, 
+			BaseSize, 
+			"About", 
+			kNormalFont, kLeftText);
 
 		currentX = LeftMargin;
 		currentY = TitleAreaHeight;

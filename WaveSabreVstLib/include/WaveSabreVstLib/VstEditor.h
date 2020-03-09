@@ -39,6 +39,10 @@ namespace WaveSabreVstLib
 		void addSpacer();
 
 	private:
+		void showAbout();
+
+		CKickButton* aboutButton;
+
 		std::string title;
 		int currentX, currentY, currentRow;
 		int maxX;
