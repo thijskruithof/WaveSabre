@@ -153,8 +153,6 @@ namespace WaveSabreCore
 		stringThickness = 1;
 		stringLevel = 0;
 		oscStringMix = 0;
-		doSlide = false;
-		slideSpeed = 0.9f;
 		filterDistType = FilterDistortionType::NONE;
 		filterDistDrive = 0.0f;
 		filterDistShape = 0.0f;
@@ -236,23 +234,6 @@ namespace WaveSabreCore
 		// log10(value(x) / 0.0000056689342) / log10(176400) = x
 
 		return 1.0f - (float)(log10f(value / 0.0000056689342f) / log10f(176400.0f));
-	}
-
-
-	static float sSlideLinearToExponential(float value)
-	{
-		return 1.0f - powf(10.0f, -(4.0f - value * 3.0f));
-	}
-
-
-	static float sSlideExponentialToLinear(float value)
-	{
-		// inverse of above formula:
-
-		float v = 1.0f - value;
-
-
-		return (4.0f + log10f(v)) / 3.0f;
 	}
 
 	// 0..1 --> 1..12 
@@ -372,8 +353,6 @@ namespace WaveSabreCore
 		case ParamIndices::VcfDistType:					filterDistType = Helpers::ParamToEnum<FilterDistortionType>(value); break;
 		case ParamIndices::FilterDistDrive:				filterDistDrive = value; break;
 		case ParamIndices::FilterDistShape:				filterDistShape = value; break;
-		case ParamIndices::DoSlide:						doSlide = Helpers::ParamToBoolean(value); break;
-		case ParamIndices::SlideSpeed:					slideSpeed = sSlideLinearToExponential(value); break;
 		case ParamIndices::NumUnisonVoices:				VoicesUnisono = sNumUnisonVoicesLinearToExponential(value);  break;
 		case ParamIndices::UnisonSpread:				unisonSpread = Helpers::ParamToRangedFloat(value, 0.0f, 0.5f); break;
 		case ParamIndices::ArpeggioType:				arpeggioType = Helpers::ParamToEnum<ArpeggioType>(value); break;
@@ -381,6 +360,8 @@ namespace WaveSabreCore
 		case ParamIndices::ArpeggioInterval:			arpeggioInterval = sArpeggioIntervalLinearToExponential(value); break;
 		case ParamIndices::ArpeggioNoteDuration:		arpeggioNoteDuration = sArpeggioIntervalLinearToExponential(value); break;
 		case ParamIndices::Pan:							VoicesPan = value; break;
+		case ParamIndices::VoiceMode:					SetVoiceMode(Helpers::ParamToVoiceMode(value)); break;
+		case ParamIndices::SlideDuration:				Slide = value; break;
 
 		// Modulator
 		default:
@@ -509,8 +490,6 @@ namespace WaveSabreCore
 		case ParamIndices::VcfDistType:					return Helpers::EnumToParam<FilterDistortionType>(filterDistType);
 		case ParamIndices::FilterDistDrive:				return filterDistDrive;
 		case ParamIndices::FilterDistShape:				return filterDistShape;
-		case ParamIndices::DoSlide:						return Helpers::BooleanToParam(doSlide);
-		case ParamIndices::SlideSpeed:					return sSlideExponentialToLinear(slideSpeed);
 		case ParamIndices::NumUnisonVoices:				return sNumUnisonVoicesExponentialToLinear(VoicesUnisono);
 		case ParamIndices::UnisonSpread:				return Helpers::RangedFloatToParam(unisonSpread, 0.0f, 0.5f); 
 		case ParamIndices::ArpeggioType:				return Helpers::EnumToParam<ArpeggioType>(arpeggioType);
@@ -518,6 +497,8 @@ namespace WaveSabreCore
 		case ParamIndices::ArpeggioInterval:			return sArpeggioIntervalExponentialToLinear(arpeggioInterval);
 		case ParamIndices::ArpeggioNoteDuration:		return sArpeggioIntervalExponentialToLinear(arpeggioNoteDuration);
 		case ParamIndices::Pan:							return VoicesPan;
+		case ParamIndices::VoiceMode:					return Helpers::VoiceModeToParam(GetVoiceMode());
+		case ParamIndices::SlideDuration:				return Slide;
 
 		// Modulator
 		default:
@@ -591,7 +572,6 @@ namespace WaveSabreCore
 	{
 		arpeggiator.NoteOff(note, deltaSamples);
 	}
-
 
 	void Pandora::TriggerNoteOn(int note, int velocity, int numSamplesToDefer)
 	{
@@ -799,7 +779,6 @@ namespace WaveSabreCore
 		if (activeNotes.Size() == 1)
 			arpeggioTime = -1;
 	}
-
 
 	void Pandora::Arpeggiator::NoteOff(int note, int numSamplesToDefer)
 	{
@@ -1567,9 +1546,9 @@ namespace WaveSabreCore
 			outputs[1][i] += currentVolumeLevel * vcaoutput * rightPanScalar; // right
 
 			// note sliding
-			double slideScalar1 = 1.0;/* + slideInitialModifierOsc1 * slideAmount;*/
-			double slideScalar2 = 1.0;/* + slideInitialModifierOsc2 * slideAmount;*/
-			double slideScalar3 = 1.0;/* + slideInitialModifierOsc3 * slideAmount;*/
+			double slideScalar1 = 1.0 + slideInitialModifierOsc1 * slideAmount;
+			double slideScalar2 = 1.0 + slideInitialModifierOsc2 * slideAmount;
+			double slideScalar3 = 1.0 + slideInitialModifierOsc3 * slideAmount;
 
 			// increment time
 			osc1time += Helpers::Max(osc1timestep * osc1timeModifier * slideScalar1, 0.0);
@@ -1590,9 +1569,8 @@ namespace WaveSabreCore
 			osc1time -= floorf((float)osc1time);
 			osc3time -= floorf((float)osc3time);
 
-			//slideAmount *= linkedPatch->slideSpeed;
+			slideAmount *= slideDecayFactor;
 
-			//slideAmount *= pandora->slideSpeed;
 			if (should_be_on && !gate && vcaLevel <= 0.001f)
 				should_be_on = false;
 		}
@@ -1601,14 +1579,19 @@ namespace WaveSabreCore
 			Terminate();
 	}
 
-	void Pandora::PandoraVoice::NoteOn(int note, int velocity, float detune, float pan)
+	void Pandora::PandoraVoice::Start(
+		int note, 
+		float velocity, 
+		float detune, 
+		double osc1startTime,
+		double osc2startTime,
+		double osc3startTime)
 	{
-		Voice::NoteOn(note, velocity, detune, pan);
-
-		const PandoraVoice* slideFrom = nullptr; //< Support later?
-
 		gate = true;
-		inputVelocity = (float)velocity / 127.0f;
+		inputVelocity = velocity;
+
+		slideAmount = 0.0f;
+		slideDecayFactor = 0.0f;
 
 		filter1low = 0.0f;
 		filter1band = 0.0f;
@@ -1638,10 +1621,9 @@ namespace WaveSabreCore
 		for (int i = 0; i < 4; ++i)
 			modulatedModulationDepth[i] = 0.0f;
 
-		// start with a random time
-		osc1time = (double)gPandoraRandFloatNormalized();
-		osc2time = (double)gPandoraRandFloatNormalized();
-		osc3time = (double)gPandoraRandFloatNormalized();
+		osc1time = osc1startTime;
+		osc2time = osc2startTime;
+		osc3time = osc3startTime;
 
 		noiseLoopOffset = (int)floorf(gPandoraRandFloatNormalized() * (float)PANDORA_VOICE_NOISE_LOOP_SIZE);
 
@@ -1687,20 +1669,63 @@ namespace WaveSabreCore
 			//	lfo[2]->SyncTo((slideFrom->lfo[2] != nullptr) ? slideFrom->lfo[2] : ownerChannel->GetLFO(2));
 		}
 
-
 		// Pluck our string.
 		//stringHelper.SetTimeStep(osc1timestep);
 		//stringHelper.Pluck(inputVelocity);
+	}
 
-		// Init filterdistortion filter
-		//filterDistortion.filter.cutoff = 1.0f;
-		//filterDistortion.filter.resonance = 1.0f;
-		//filterDistortion.filter.UpdateCoeffs();
+	void Pandora::PandoraVoice::NoteOn(int note, int velocity, float detune, float pan)
+	{
+		Voice::NoteOn(note, velocity, detune, pan);
+
+		Start(
+			note,
+			(float)velocity / 127.0f,
+			detune,
+			(double)gPandoraRandFloatNormalized(),	//< start with a random time
+			(double)gPandoraRandFloatNormalized(),	//< start with a random time
+			(double)gPandoraRandFloatNormalized()	//< start with a random time
+		);
 	}
 
 	void Pandora::PandoraVoice::NoteOff()
 	{
+		Voice::NoteOff();
+
 		gate = false;
+	}
+
+	void Pandora::PandoraVoice::NoteSlide(int note)
+	{
+		Voice::NoteSlide(note);
+
+		double originalOsc1TimeStep = osc1timestep;
+		double originalOsc2TimeStep = osc2timestep;
+		double originalOsc3TimeStep = osc3timestep;
+
+		Start(
+			note,
+			inputVelocity,
+			Detune,
+			osc1time,	// Start from current time
+			osc2time,	// Start from current time
+			osc3time	// Start from current time
+		);
+
+		slideAmount = 1;
+
+		// TODO: Calculate exponential decay factor for slide so that:
+		// f(x) = g^x
+		// f(0) = 1
+		// f(slideSamples) = ~0.001
+		// so:
+		// g^slideSamples = ~0.001
+
+		slideDecayFactor = 0.0f;
+
+		slideInitialModifierOsc1 = (originalOsc1TimeStep / osc1timestep) - 1;
+		slideInitialModifierOsc2 = (originalOsc2TimeStep / osc2timestep) - 1;
+		slideInitialModifierOsc3 = (originalOsc3TimeStep / osc3timestep) - 1;
 	}
 
 	void Pandora::PandoraVoice::Terminate()

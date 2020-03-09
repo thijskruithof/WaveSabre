@@ -163,8 +163,8 @@ void PandoraEditor::Open()
 
 	addSpacer();
 
-	addKnob((VstInt32)Pandora::ParamIndices::DoSlide, "DoSlide");
-	addKnob((VstInt32)Pandora::ParamIndices::SlideSpeed, "SlideSpeed");
+	addKnob((VstInt32)Pandora::ParamIndices::VoiceMode, "VoiceMode");
+	addKnob((VstInt32)Pandora::ParamIndices::SlideDuration, "SlideDuration");
 
 	addSpacer();
 

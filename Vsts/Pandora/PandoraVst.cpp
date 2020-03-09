@@ -126,7 +126,6 @@ const char* gStrModulationDepthRange[(int)Pandora::ModulationDepthRange::COUNT] 
 	"64"
 };
 
-
 const char* gStrArpeggioInterval[9] = {
 	"1/8",
 	"2/8",
@@ -137,6 +136,11 @@ const char* gStrArpeggioInterval[9] = {
 	"8",
 	"16",
 	"32"
+};
+
+const char* gStrVoiceMode[2] = {
+	"Poly",
+	"Mono"
 };
 
 
@@ -218,8 +222,6 @@ void PandoraVst::getParameterName(VstInt32 index, char *text)
 	case Pandora::ParamIndices::VcfDistType:				vst_strncpy(text, "Vcfdisttype", kVstExtMaxParamStrLen); break;
 	case Pandora::ParamIndices::FilterDistDrive:			vst_strncpy(text, "Vcfdistdrive", kVstExtMaxParamStrLen); break;
 	case Pandora::ParamIndices::FilterDistShape:			vst_strncpy(text, "Vcfdistshape", kVstExtMaxParamStrLen); break;
-	case Pandora::ParamIndices::DoSlide:					vst_strncpy(text, "DoSlide", kVstExtMaxParamStrLen); break;
-	case Pandora::ParamIndices::SlideSpeed:					vst_strncpy(text, "Slidespeed", kVstExtMaxParamStrLen); break;
 	case Pandora::ParamIndices::NumUnisonVoices:			vst_strncpy(text, "NumUnison", kVstExtMaxParamStrLen); break;
 	case Pandora::ParamIndices::UnisonSpread:				vst_strncpy(text, "Unisonspread", kVstExtMaxParamStrLen); break;
 	case Pandora::ParamIndices::ArpeggioType:				vst_strncpy(text, "ArpType", kVstExtMaxParamStrLen); break;
@@ -227,6 +229,9 @@ void PandoraVst::getParameterName(VstInt32 index, char *text)
 	case Pandora::ParamIndices::ArpeggioInterval:			vst_strncpy(text, "ArpInterval", kVstExtMaxParamStrLen); break;
 	case Pandora::ParamIndices::ArpeggioNoteDuration:		vst_strncpy(text, "ArpNoteDuration", kVstExtMaxParamStrLen); break;
 	case Pandora::ParamIndices::Pan:						vst_strncpy(text, "Pan", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::VoiceMode:					vst_strncpy(text, "VoiceMode", kVstExtMaxParamStrLen); break;
+	case Pandora::ParamIndices::SlideDuration:				vst_strncpy(text, "SlideDuration", kVstExtMaxParamStrLen); break;
+
 
 	// Modulator
 	default:
@@ -308,8 +313,6 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::VcfDistType:				setParameterDisplayAndLabel(display, label, gStrFilterDistType[(int)((Pandora*)getDevice())->filterDistType]); break;
 	case Pandora::ParamIndices::FilterDistDrive:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->filterDistDrive, 2); break;
 	case Pandora::ParamIndices::FilterDistShape:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->filterDistShape, 2); break;
-	case Pandora::ParamIndices::DoSlide:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->doSlide); break;
-	case Pandora::ParamIndices::SlideSpeed:					setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->slideSpeed, 4); break;  
 	case Pandora::ParamIndices::NumUnisonVoices:			setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->VoicesUnisono); break;
 	case Pandora::ParamIndices::UnisonSpread:				setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->unisonSpread, 2); break;
 	case Pandora::ParamIndices::ArpeggioType:				setParameterDisplayAndLabel(display, label, gStrArpeggioType[(int)((Pandora*)getDevice())->arpeggioType]); break;
@@ -317,7 +320,9 @@ void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char
 	case Pandora::ParamIndices::ArpeggioInterval:			setParameterDisplayAndLabel(display, label, gStrArpeggioInterval[(int)Helpers::Clamp(log2f((float)((Pandora*)getDevice())->arpeggioInterval), 0.0f, 8.0f)]); break;
 	case Pandora::ParamIndices::ArpeggioNoteDuration:		setParameterDisplayAndLabel(display, label, gStrArpeggioInterval[(int)Helpers::Clamp(log2f((float)((Pandora*)getDevice())->arpeggioNoteDuration), 0.0f, 8.0f)]); break;
 	case Pandora::ParamIndices::Pan:						setParameterDisplayAndLabel(display, label, ((Pandora*)getDevice())->VoicesPan, 2); break;
-	
+	case Pandora::ParamIndices::VoiceMode:					setParameterDisplayAndLabel(display, label, gStrVoiceMode[(int)((Pandora*)getDevice())->GetVoiceMode()]); break;
+	case Pandora::ParamIndices::SlideDuration:				VstPlug::getParameterDisplayAndLabel(index, display, label); break;
+
 	// Modulator
 	default:
 	{

@@ -1,5 +1,4 @@
 #include <WaveSabreVstLib/VstPlug.h>
-#include <WaveSabreVstLib/VstVersion.h>
 #include <stdio.h>
 
 using namespace std;
@@ -167,7 +166,11 @@ namespace WaveSabreVstLib
 
 	void VstPlug::getEffectBuildNumberString(char* buildNumber)
 	{
-		sprintf(buildNumber, "build %d", VstVersion::getCoreBuildNumber());
+#ifdef RELEASE_VERSION
+		sprintf(buildNumber, "Build %d", RELEASE_VERSION);
+#else
+		sprintf(buildNumber, "Unreleased build (%s %s)", __DATE__, __TIME__);
+#endif
 	}
 
 	VstInt32 VstPlug::canDo(char *text)

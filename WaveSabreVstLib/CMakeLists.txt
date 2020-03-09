@@ -43,7 +43,6 @@ add_library(WaveSabreVstLib
 	src/ImageManager.cpp
 	src/NoTextCOptionMenu.cpp
 	src/CEnhancedKnob.cpp
-	src/VstVersion.cpp
 	src/VstEditor.cpp	
 	src/VstPlug.cpp)
 

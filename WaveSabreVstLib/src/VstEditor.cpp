@@ -1,5 +1,4 @@
 #include <WaveSabreVstLib/VstEditor.h>
-#include <WaveSabreVstLib/VstVersion.h>
 #include <WaveSabreVstLib/VstPlug.h>
 
 using namespace std;
@@ -93,7 +92,7 @@ namespace WaveSabreVstLib
 		brand_label->setFrameColor(VSTGUI::kGreyCColor);
 		brand_label->setFontColor(VSTGUI::kWhiteCColor);
 		brand_label->setTransparency(false);
-		addTextLabel(LeftMargin + 2, BuildVersionTopMargin + 20, build_label_width, BaseSize, build_label_text, kNormalFont, kLeftText);
+		addTextLabel(LeftMargin + 2, BuildVersionTopMargin + 20, 300, BaseSize, build_label_text, kNormalFont, kLeftText);
 
 		currentX = LeftMargin;
 		currentY = TitleAreaHeight;

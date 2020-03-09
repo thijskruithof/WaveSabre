@@ -91,8 +91,6 @@ namespace WaveSabreCore
 			VcfDistType,
 			FilterDistDrive,
 			FilterDistShape,
-			DoSlide,
-			SlideSpeed,
 			NumUnisonVoices,
 			UnisonSpread,
 			ArpeggioType,
@@ -100,6 +98,8 @@ namespace WaveSabreCore
 			ArpeggioInterval,
 			ArpeggioNoteDuration,
 			Pan,
+			VoiceMode,
+			SlideDuration,
 
 			ModulatorFirstParam,
 			ModulatorLastParam = ModulatorFirstParam + (PANDORA_NUM_MODULATOR_DEST * PANDORA_MAX_MODULATORS_PER_DEST * (int)ModulatorParamIndices::COUNT) - 1,
@@ -422,10 +422,6 @@ namespace WaveSabreCore
 		float filterDistDrive;
 		float filterDistShape;
 
-		// Sliding:
-		bool doSlide;
-		float slideSpeed; // special multiplier factor (~0.9995 is nice)
-
 		// Unison:
 		float unisonSpread; // in semi-tones
 
@@ -653,9 +649,11 @@ namespace WaveSabreCore
 			virtual void Run(double songPosition, float** outputs, int numSamples);
 
 			virtual void NoteOn(int note, int velocity, float detune, float pan);
+			virtual void NoteSlide(int note);
 			virtual void NoteOff();
 
 		private:
+			void Start(int note, float velocity, float detune, double osc1startTime, double osc2startTime, double osc3startTime);
 			void Terminate();
 			float GetModulationAmountSummed(Pandora::ModulationDestType dest) const;
 			float GetModulationAmountMultiplied(Pandora::ModulationDestType dest) const;
@@ -693,11 +691,10 @@ namespace WaveSabreCore
 
 			float vcaLevel;
 
-			//double slideAmount;
-			//double slideInitialModifierOsc1;
-			//double slideInitialModifierOsc2;
-			//double slideInitialModifierOsc3;
-			//double slideScaleFactorPerSample;
+			double slideAmount;
+			double slideInitialModifierOsc1;
+			double slideInitialModifierOsc2;
+			double slideInitialModifierOsc3;
 
 			// filter state variables
 			float filter1low, filter1band;
@@ -715,6 +712,8 @@ namespace WaveSabreCore
 
 			// filter distortion
 			Distortion filterDistortion;
+
+			float slideDecayFactor;
 
 			//int unisonVoiceIndex; // index in the set of unison voices	
 		};
