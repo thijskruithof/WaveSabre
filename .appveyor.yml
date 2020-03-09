@@ -29,7 +29,22 @@ build_script:
       cd ..
 
 after_build:
-  - cmd: 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip c:\projects\wavesabre\build\vsts\release\*.dll c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.config c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.exe c:\projects\wavesabre\ProjectManager\bin\Release\*.config c:\projects\wavesabre\ProjectManager\bin\Release\*.dll c:\projects\wavesabre\ProjectManager\bin\Release\*.exe c:\projects\wavesabre\build\WaveSabreStandAlonePlayer\Release\*.exe
+  - cmd: >-
+      cd \projects\wavesabre
+      mkdir pkg
+      cd pkg
+      mkdir VSTs
+      mkdir Tools
+      copy c:\projects\wavesabre\LICENSE .
+      copy c:\projects\wavesabre\README.md .
+      copy c:\projects\wavesabre\build\vsts\release\*.dll VSTs
+      copy c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.config Tools
+      copy c:\projects\wavesabre\ConvertTheFuck\bin\Release\*.exe Tools
+      copy c:\projects\wavesabre\ProjectManager\bin\Release\*.config Tools
+      copy c:\projects\wavesabre\ProjectManager\bin\Release\*.dll Tools
+      copy c:\projects\wavesabre\ProjectManager\bin\Release\*.exe Tools
+      copy c:\projects\wavesabre\build\WaveSabreStandAlonePlayer\Release\*.exe Tools
+      7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip *.* -r      
 
 artifacts:
   - path: '*.zip'
