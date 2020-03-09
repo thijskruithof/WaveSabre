@@ -21,9 +21,7 @@ install:
 build_script:
   - ps: |
       New-Item -ItemType Directory -Path build | Out-Null
-      cd build
-      cmake ..
-      cd ..
+      cmake -B build -A Win32 
       msbuild /v:minimal /nologo Tools.sln /property:Configuration=Release
       cd build
       $env:CL="/DRELEASE_VERSION#$env:APPVEYOR_BUILD_NUMBER"
