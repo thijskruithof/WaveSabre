@@ -25,7 +25,7 @@ WaveSabre is made by [ferris](https://github.com/yupferris) and [h0ffman](https:
 
 And several others! _(Please let us know if we forgot someone!)_
 
-This fork is being maintained by [glow](http://glow.inque.org).
+This fork is being developed by [glow](http://glow.inque.org) and [izard](http://izard.inque.org) of Inque.
 
 ## License
 
