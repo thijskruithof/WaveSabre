@@ -1628,10 +1628,6 @@ namespace WaveSabreCore
 		currentLfo1Amount = 0;
 		currentLfo2Amount = 0;
 		currentLfo3Amount = 0;
-		envelope1.Reset();
-		envelope2.Reset();
-		envelope3.Reset();
-		envelope4.Reset();
 
 		double factor = (410.96047696981869831451220512851 / (double)Helpers::CurrentSampleRate) / M_2_PI;
 		factor /= 100.0f; // magic scaling function
@@ -1710,6 +1706,11 @@ namespace WaveSabreCore
 			(double)gPandoraRandFloatNormalized(),	//< start with a random time
 			(double)gPandoraRandFloatNormalized()	//< start with a random time
 		);
+
+        envelope1.Reset();
+        envelope2.Reset();
+        envelope3.Reset();
+        envelope4.Reset();
 
 		slideInitialModifierOsc1 = 0.0;
 		slideInitialModifierOsc2 = 0.0;
