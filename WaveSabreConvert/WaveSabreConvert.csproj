@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RenoiseSong64.cs" />
     <Compile Include="SendItConfig.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="FLConverter.cs" />
@@ -71,7 +72,6 @@
     <Compile Include="RenoiseConverter.cs" />
     <Compile Include="RenoiseInject.cs" />
     <Compile Include="RenoiseParser.cs" />
-    <Compile Include="RenoiseSong63.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="Song.cs" />
     <Compile Include="SongDiff.cs" />
