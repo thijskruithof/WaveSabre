@@ -286,7 +286,12 @@ namespace WaveSabreVstLib
 
 	void VstEditor::addSpacer()
 	{
-		currentX += SpacerWidth;
-		maxX = max(currentX, maxX);
+        addSpace(SpacerWidth);
 	}
+
+    void VstEditor::addSpace(int width)
+    {
+        currentX += width;
+        maxX = max(currentX, maxX);
+    }
 }

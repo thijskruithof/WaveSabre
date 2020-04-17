@@ -37,6 +37,7 @@ namespace WaveSabreVstLib
 		NoTextCOptionMenu *addOptionMenu(std::string caption);
 
 		void addSpacer();
+        void addSpace(int width);
 
 	private:
 		void showAbout();
