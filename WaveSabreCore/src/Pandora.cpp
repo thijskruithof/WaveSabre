@@ -578,6 +578,7 @@ namespace WaveSabreCore
 
 		arpeggiator.Update(numSamples);
 
+
 		SynthDevice::Run(songPosition, inputs, outputs, numSamples);
 	}
 
@@ -1127,6 +1128,37 @@ namespace WaveSabreCore
 		return result;
 	}
 
+    float Pandora::PandoraVoice::GetModulationAmountSummedAndHasRunningEnvelope(Pandora::ModulationDestType dest, bool* hasRunningEnvelope) const
+    {
+        float result = 0.0f;
+        const AllModulationsType<ResolvedModulationType>::ModulationsType& mods = resolvedModulations.modulationsPerDest[(int)dest];
+        const AllModulationsType<UnresolvedModulationType>::ModulationsType& modsUnresolved = pandora->modulations.modulationsPerDest[(int)dest];
+
+        if (mods.usedModulatorsMask == 0)
+            return result;
+
+        for (int i = 0; i < PANDORA_MAX_MODULATORS_PER_DEST; ++i)
+        {
+            if (mods.IsUsed(i))
+            {
+                result += (*mods.modulations[i].resolvedSource) * (*mods.modulations[i].resolvedDepth);
+
+                // Keep track of any still running envelope
+                if (*hasRunningEnvelope == false &&
+                    (int)modsUnresolved.modulations[i].source >= (int)ModulationSourceType::ENV1 &&
+                    (int)modsUnresolved.modulations[i].source <= (int)ModulationSourceType::ENV4 &&
+                    *mods.modulations[i].resolvedSource > 0.001f)
+                {
+                    *hasRunningEnvelope = true;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    
+
 	float Pandora::PandoraVoice::GetModulationAmountMultiplied(Pandora::ModulationDestType dest) const
 	{
 		float result = 1.0f;
@@ -1521,6 +1553,8 @@ namespace WaveSabreCore
 			//	filteroutput = filteroutput * submixWeightOsc + stringHelper.RenderSample(filteroutput) * stringLevelModulation;
 
 			// VCA
+            bool has_running_vca_envelopes = false;
+
 			{
 				vcaoutput = filteroutput;
 				vcaLevel = 0;
@@ -1528,7 +1562,7 @@ namespace WaveSabreCore
 				// VCA MODULATION
 				if (resolvedModulations.IsAffecting(ModulationDestType::VCA))
 				{
-					vcaLevel = GetModulationAmountSummed(ModulationDestType::VCA);
+					vcaLevel = GetModulationAmountSummedAndHasRunningEnvelope(ModulationDestType::VCA, &has_running_vca_envelopes);
 					vcaoutput *= vcaLevel;
 				}
 			}
@@ -1595,7 +1629,8 @@ namespace WaveSabreCore
 
 			slideAmount *= slideDecayFactor;
 
-			if (should_be_on && !gate && vcaLevel <= 0.001f)
+            // Terminate our voice if it has no gate and its VCA is not depending on any still running envelope.
+			if (should_be_on && !gate && !has_running_vca_envelopes)
 				should_be_on = false;
 		}
 

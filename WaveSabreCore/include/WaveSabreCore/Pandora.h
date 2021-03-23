@@ -659,6 +659,7 @@ namespace WaveSabreCore
 			void Start(int note, float velocity, float detune, double osc1startTime, double osc2startTime, double osc3startTime);
 			void Terminate();
 			float GetModulationAmountSummed(Pandora::ModulationDestType dest) const;
+            float GetModulationAmountSummedAndHasRunningEnvelope(Pandora::ModulationDestType dest, bool* hasRunningEnvelope) const;
 			float GetModulationAmountMultiplied(Pandora::ModulationDestType dest) const;
 			void ResolveModulation(ResolvedModulationType& dest, const UnresolvedModulationType& src);
 			void ResolveModulations(AllModulationsType<ResolvedModulationType>::ModulationsType& dest, const AllModulationsType<UnresolvedModulationType>::ModulationsType& src);
