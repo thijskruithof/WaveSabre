@@ -14,24 +14,15 @@ PyxisEditor::~PyxisEditor()
 
 void PyxisEditor::Open()
 {
-	addKnob((VstInt32)Pyxis::ParamIndices::LeftDelayCoarse, "LEFT COARSE");
+	addKnob((VstInt32)Pyxis::ParamIndices::Amount, "Dry/Wet");
 	addSpacer();
-	addKnob((VstInt32)Pyxis::ParamIndices::LeftDelayFine, "LEFT FINE");
+	addKnob((VstInt32)Pyxis::ParamIndices::InputGain, "Input Gain");
 	addSpacer();
-	addKnob((VstInt32)Pyxis::ParamIndices::Feedback, "FEEDBACK");
+	addKnob((VstInt32)Pyxis::ParamIndices::Time, "Time");
 	addSpacer();
-	addKnob((VstInt32)Pyxis::ParamIndices::Cross, "CROSS");
+	addKnob((VstInt32)Pyxis::ParamIndices::Diffusion, "Diffusion");
 	addSpacer();
-	addKnob((VstInt32)Pyxis::ParamIndices::DryWet, "DRY/WET");
-
-	startNextRow();
-	addKnob((VstInt32)Pyxis::ParamIndices::RightDelayCoarse, "RIGHT COARSE");
-	addSpacer();
-	addKnob((VstInt32)Pyxis::ParamIndices::RightDelayFine, "RIGHT FINE");
-	addSpacer();
-	addKnob((VstInt32)Pyxis::ParamIndices::LowCutFreq, "LC FREQ");
-	addSpacer();
-	addKnob((VstInt32)Pyxis::ParamIndices::HighCutFreq, "HC FREQ");
+	addKnob((VstInt32)Pyxis::ParamIndices::LP, "LP");
 
 	VstEditor::Open();
 }

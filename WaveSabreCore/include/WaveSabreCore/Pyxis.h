@@ -5,26 +5,26 @@
 #include "DelayBuffer.h"
 #include "StateVariableFilter.h"
 
+#include "Pyxis/fx_engine.h"
+
+
 namespace WaveSabreCore
 {
+	/**
+	Pyxis, an elaborate reverb.
+	Based on the Clouds texture synthesizer,
+	https://pichenettes.github.io/mutable-instruments-documentation/modules/clouds/
+	**/
 	class Pyxis : public Device
 	{
 	public:
 		enum class ParamIndices
 		{
-			LeftDelayCoarse,
-			LeftDelayFine,
-
-			RightDelayCoarse,
-			RightDelayFine,
-
-			LowCutFreq,
-			HighCutFreq,
-
-			Feedback,
-			Cross,
-
-			DryWet,
+			Amount,
+			InputGain,
+			Time,
+			Diffusion,
+			LP,
 
 			NumParams,
 		};
@@ -38,16 +38,18 @@ namespace WaveSabreCore
 		virtual float GetParam(int index) const;
 
 	private:
-		int leftDelayCoarse, leftDelayFine;
-		int rightDelayCoarse, rightDelayFine;
-		float lowCutFreq, highCutFreq;
-		float feedback, cross;
-		float dryWet;
+		typedef FxEngine<16384, FORMAT_32_BIT> E;
+		E engine_;
+		char* buffer;
 
-		DelayBuffer leftBuffer;
-		DelayBuffer rightBuffer;
+		float amount_;
+		float inputGain_;
+		float reverbTime_;
+		float diffusion_;
+		float lp_;
 
-		StateVariableFilter lowCutFilter[2], highCutFilter[2];
+		float lp_decay_1_;
+		float lp_decay_2_;
 	};
 }
 
