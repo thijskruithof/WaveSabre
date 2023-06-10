@@ -249,7 +249,7 @@ void PandoraVst::getParameterName(VstInt32 index, char *text)
 
 void PandoraVst::getParameterDisplayAndLabel(VstInt32 index, char* display, char* label)
 {
-	switch ((Echo::ParamIndices)index)
+	switch ((Pandora::ParamIndices)index)
 	{
 	case Pandora::ParamIndices::Osc1waveform:				setParameterDisplayAndLabel(display, label, gStrOscWaveformType[(int)((Pandora*)getDevice())->osc1waveform]); break;
 	case Pandora::ParamIndices::Osc2waveform:				setParameterDisplayAndLabel(display, label, gStrOscWaveformType[(int)((Pandora*)getDevice())->osc2waveform]); break;

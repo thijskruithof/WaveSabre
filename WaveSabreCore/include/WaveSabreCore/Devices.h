@@ -1,6 +1,7 @@
 #ifndef __WAVESABRECORE_DEVICES_H__
 #define __WAVESABRECORE_DEVICES_H__
 
+// Base WaveSabre quality devices
 #include "Falcon.h"
 #include "Slaughter.h"
 #include "Thunder.h"
@@ -16,6 +17,8 @@
 #include "Twister.h"
 #include "Cathedral.h"
 
+// Additional devices brought to you by Inque
 #include "Pandora.h"
+#include "Pyxis.h"
 
 #endif
