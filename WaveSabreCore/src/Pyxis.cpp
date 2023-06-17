@@ -1,31 +1,10 @@
 #include <WaveSabreCore/Pyxis.h>
 #include <WaveSabreCore/Helpers.h>
 
+#include <cassert>
+
 #include <math.h>
 
-__int32 FxEngineClip16(__int32 x) {
-	if (x < -32768) {
-		return -32768;
-	}
-	else if (x > 32767) {
-		return 32767;
-	}
-	else {
-		return x;
-	}
-}
-
-unsigned __int16 FxEngineClipU16(__int32 x) {
-	if (x < 0) {
-		return 0;
-	}
-	else if (x > 65535) {
-		return 65535;
-	}
-	else {
-		return x;
-	}
-}
 
 
 namespace WaveSabreCore
@@ -33,20 +12,24 @@ namespace WaveSabreCore
 	Pyxis::Pyxis()
 		: Device((int)ParamIndices::NumParams)
 	{
-		buffer = new char[16384 * 4];
-		engine_.Init((float*)buffer);
-		engine_.SetLFOFrequency(LFO_1, 0.5f / 32000.0f);
-		engine_.SetLFOFrequency(LFO_2, 0.3f / 32000.0f);
+		buffer = new float[16384];
+		for (int i = 0; i < 16384; ++i)
+			buffer[i] = 0;
 
+		bufferWritePtr = 0;
+		lfo[0].Init(16.0f / 32000.0f);
+		lfo[1].Init(9.6f / 32000.0f);
 
-		amount_ = 0.5f;
-		inputGain_ = 0.2f;
-		reverbTime_ = 0.5f;
-		lp_ = 0.7f;
-		diffusion_ = 0.625f;
+		amount = 0.5f;
+		inputGain = 0.2f;
+		reverbTime = 0.5f;
+		lp = 0.7f;
+		diffusion = 0.625f;
 
-		lp_decay_1_ = 0.0f;
-		lp_decay_2_ = 0.0f;
+		lpDecay1 = 0.0f;
+		lpDecay2 = 0.0f;
+
+		srand(1337);
 	}
 
 	Pyxis::~Pyxis()
@@ -60,100 +43,187 @@ namespace WaveSabreCore
 		// (4 AP diffusers on the input, then a loop of 2x 2AP+1Delay).
 		// Modulation is applied in the loop of the first diffuser AP for additional
 		// smearing; and to the two long delays for a slow shimmer/chorus effect.
-		typedef E::Reserve<113,
-			E::Reserve<162,
-			E::Reserve<241,
-			E::Reserve<399,
-			E::Reserve<1653,
-			E::Reserve<2038,
-			E::Reserve<3411,
-			E::Reserve<1913,
-			E::Reserve<1663,
-			E::Reserve<4782> > > > > > > > > > Memory;
-		E::DelayLine<Memory, 0> ap1;
-		E::DelayLine<Memory, 1> ap2;
-		E::DelayLine<Memory, 2> ap3;
-		E::DelayLine<Memory, 3> ap4;
-		E::DelayLine<Memory, 4> dap1a;
-		E::DelayLine<Memory, 5> dap1b;
-		E::DelayLine<Memory, 6> del1;
-		E::DelayLine<Memory, 7> dap2a;
-		E::DelayLine<Memory, 8> dap2b;
-		E::DelayLine<Memory, 9> del2;
-		E::Context c;
 
-		const float kap = diffusion_;
-		const float klp = lp_;
-		const float krt = reverbTime_;
-		const float amount = amount_;
-		const float gain = inputGain_;
 
-		float lp_1 = lp_decay_1_;
-		float lp_2 = lp_decay_2_;
+		float lpState1 = lpDecay1;
+		float lpState2 = lpDecay2;
 
-		for (int i = 0; i < numSamples; i++)
+		// HACK: Fill with random noise
+		for (int i = 0; i < numSamples; ++i)
 		{
-			float wet;
-			float apout = 0.0f;
-			engine_.Start(&c);
-
-			// Smear AP1 inside the loop.
-			c.Interpolate(ap1, 10.0f, LFO_1, 60.0f, 1.0f);
-			c.Write(ap1, 100, 0.0f);
-
-			c.Read(inputs[0][i] + inputs[1][i], gain);
-
-			// Diffuse through 4 allpasses.
-			c.Read(ap1 TAIL, kap);
-			c.WriteAllPass(ap1, -kap);
-			c.Read(ap2 TAIL, kap);
-			c.WriteAllPass(ap2, -kap);
-			c.Read(ap3 TAIL, kap);
-			c.WriteAllPass(ap3, -kap);
-			c.Read(ap4 TAIL, kap);
-			c.WriteAllPass(ap4, -kap);
-			c.Write(apout);
-
-			// Main reverb loop.
-			c.Load(apout);
-			c.Interpolate(del2, 4680.0f, LFO_2, 100.0f, krt);
-			c.Lp(lp_1, klp);
-			c.Read(dap1a TAIL, -kap);
-			c.WriteAllPass(dap1a, kap);
-			c.Read(dap1b TAIL, kap);
-			c.WriteAllPass(dap1b, -kap);
-			c.Write(del1, 2.0f);
-			c.Write(wet, 0.0f);
-
-			outputs[0][i] = inputs[0][i] + (wet - inputs[0][i]) * amount;
-
-			c.Load(apout);
-			// c.Interpolate(del1, 4450.0f, LFO_1, 50.0f, krt);
-			c.Read(del1 TAIL, krt);
-			c.Lp(lp_2, klp);
-			c.Read(dap2a TAIL, kap);
-			c.WriteAllPass(dap2a, -kap);
-			c.Read(dap2b TAIL, -kap);
-			c.WriteAllPass(dap2b, kap);
-			c.Write(del2, 2.0f);
-			c.Write(wet, 0.0f);
-
-			outputs[1][i] = inputs[1][i] + (wet - inputs[1][i]) * amount;
+			inputs[0][i] = (float)rand() / (float)RAND_MAX;
+			inputs[1][i] = (float)rand() / (float)RAND_MAX;
 		}
 
-		lp_decay_1_ = lp_1;
-		lp_decay_2_ = lp_2;
+
+		// ap1:		base =     0		length = 113
+		// ap2:		base =   113		length = 162
+		// ap3:		base =   275		length = 241	
+		// ap4:		base =   516		length = 399
+		// dap1a:	base =   915		length = 1653
+		// dap1b:	base =  2568		length = 2038
+		// del1:	base =  4606		length = 3411
+		// dap2a:	base =  8017		length = 1913
+		// dap2b:	base =  9930		length = 1663
+		// del2:	base = 11593		length = 4782
+		// end: 16375
+
+
+		for (int i = 0; i < numSamples; i++)
+		{			
+			float inputL = inputs[0][i];
+			float inputR = inputs[1][i];
+
+
+			float lfoValue[2];
+
+			// Start
+			--bufferWritePtr;
+			if (bufferWritePtr < 0)
+				bufferWritePtr += 16384;
+
+			// Init LFOs
+			if ((bufferWritePtr & 31) == 0) 
+			{
+				lfoValue[0] = lfo[0].Next();
+				lfoValue[1] = lfo[1].Next();
+			}
+			else 
+			{
+				lfoValue[0] = lfo[0].Value();
+				lfoValue[1] = lfo[1].Value();
+			}
+
+			// --------------------------------------------
+			// Smear AP1 inside the loop.
+			// --------------------------------------------
+			
+			float offset = 10.0f + 60.0f * lfoValue[0];
+			int offset_integral = static_cast<int>(offset);
+			float offset_fractional = offset - static_cast<float>(offset_integral);
+
+			float a = buffer[(bufferWritePtr + offset_integral) & 16383];
+			float b = buffer[(bufferWritePtr + offset_integral + 1) & 16383];
+			float previous_read = a + (b - a) * offset_fractional;
+
+			buffer[(bufferWritePtr + 100) & 16383] = previous_read;
+
+			float accumulator = (inputL + inputR) * inputGain;
+
+			// --------------------------------------------
+			// Diffuse through 4 allpasses.
+			// --------------------------------------------
+				
+			previous_read = buffer[(bufferWritePtr + 112) & 16383];
+			accumulator += previous_read * diffusion;
+
+			buffer[(bufferWritePtr) & 16383] = accumulator;
+			accumulator *= -diffusion;
+			accumulator += previous_read;
+
+			previous_read = buffer[(bufferWritePtr + 274) & 16383];
+			accumulator += previous_read * diffusion;
+
+			buffer[(bufferWritePtr + 113) & 16383] = accumulator;
+			accumulator *= -diffusion;
+			accumulator += previous_read;
+
+			previous_read = buffer[(bufferWritePtr + 515) & 16383];
+			accumulator += previous_read * diffusion;
+
+			buffer[(bufferWritePtr + 275) & 16383] = accumulator;
+			accumulator *= -diffusion;
+			accumulator += previous_read;
+
+			previous_read = buffer[(bufferWritePtr + 914) & 16383];
+			accumulator += previous_read * diffusion;
+
+			buffer[(bufferWritePtr + 516) & 16383] = accumulator;
+			accumulator *= -diffusion;
+			accumulator += previous_read;
+
+			float allpassOutput = accumulator;
+
+			// --------------------------------------------
+			// Main reverb loop.
+			// --------------------------------------------
+				
+			// Left output
+
+			offset = 4680.0f + 100.0f * lfoValue[1];
+			offset_integral = static_cast<int>(offset);
+			offset_fractional = offset - static_cast<float>(offset_integral);
+
+			a = buffer[(bufferWritePtr + offset_integral + 11593) & 16383];
+			b = buffer[(bufferWritePtr + offset_integral + 11594) & 16383];
+			previous_read = a + (b - a) * offset_fractional;
+			accumulator += previous_read * reverbTime;
+
+			lpState1 += lp * (accumulator - lpState1);
+			accumulator = lpState1;
+
+			previous_read = buffer[(bufferWritePtr + 2567) & 16383];
+			accumulator += previous_read * -diffusion;
+
+			buffer[(bufferWritePtr + 915) & 16383] = accumulator;
+			accumulator *= diffusion;
+			accumulator += previous_read;
+
+			previous_read = buffer[(bufferWritePtr + 4605) & 16383];
+			accumulator += previous_read * diffusion;
+
+			buffer[(bufferWritePtr + 2568) & 16383] = accumulator;
+			accumulator *= -diffusion;
+			accumulator += previous_read;
+
+			buffer[(bufferWritePtr + 4606) & 16383] = accumulator;
+			accumulator *= 2.0f;
+
+			outputs[0][i] = inputL + (accumulator - inputL) * amount;
+
+			// Right output
+
+			accumulator = allpassOutput;
+
+			previous_read = buffer[(bufferWritePtr + 8016) & 16383];
+			accumulator += previous_read * reverbTime;
+
+			lpState2 += lp * (accumulator - lpState2);
+			accumulator = lpState2;
+
+			previous_read = buffer[(bufferWritePtr + 9929) & 16383];
+			accumulator += previous_read * diffusion;
+
+			buffer[(bufferWritePtr + 8017) & 16383] = accumulator;
+			accumulator *= -diffusion;
+			accumulator += previous_read;
+
+			previous_read = buffer[(bufferWritePtr + 11592) & 16383];
+			accumulator += previous_read * -diffusion;
+
+			buffer[(bufferWritePtr + 9930) & 16383] = accumulator;
+			accumulator *= diffusion;
+			accumulator += previous_read;
+
+			buffer[(bufferWritePtr + 11593) & 16383] = accumulator;
+			accumulator *= 2.0f;
+
+			outputs[1][i] = inputR + (accumulator - inputR) * amount;
+		}
+
+		lpDecay1 = lpState1;
+		lpDecay2 = lpState2;
 	}
 
 	void Pyxis::SetParam(int index, float value)
 	{
 		switch ((ParamIndices)index)
 		{
-		case ParamIndices::Amount:		amount_ = value; break;
-		case ParamIndices::InputGain:	inputGain_ = value; break;
-		case ParamIndices::Time:		reverbTime_ = value; break;
-		case ParamIndices::Diffusion:	diffusion_ = value; break;
-		case ParamIndices::LP:			lp_ = value; break;
+		case ParamIndices::Amount:		amount = value; break;
+		case ParamIndices::InputGain:	inputGain = value; break;
+		case ParamIndices::Time:		reverbTime = value; break;
+		case ParamIndices::Diffusion:	diffusion = value; break;
+		case ParamIndices::LP:			lp = value; break;
 		}
 	}
 
@@ -162,13 +232,52 @@ namespace WaveSabreCore
 		switch ((ParamIndices)index)
 		{
 		default:
-		case ParamIndices::Amount:		return amount_;
-		case ParamIndices::InputGain:	return inputGain_;
-		case ParamIndices::Time:		return reverbTime_;
-		case ParamIndices::Diffusion:	return diffusion_;
-		case ParamIndices::LP:			return lp_;
+		case ParamIndices::Amount:		return amount;
+		case ParamIndices::InputGain:	return inputGain;
+		case ParamIndices::Time:		return reverbTime;
+		case ParamIndices::Diffusion:	return diffusion;
+		case ParamIndices::LP:			return lp;
 		}
 
 		return 0.0f;
+	}
+
+
+	void Pyxis::LFO::Init(float frequency)
+	{
+		float sign = 16.0f;
+		frequency -= 0.25f;
+
+		if (frequency < 0.0f) 
+			frequency = -frequency;
+		else if (frequency > 0.5f)
+			frequency -= 0.5f;
+		else
+			sign = -16.0f;
+
+		iirCoefficient = sign * frequency * (1.0f - 2.0f * frequency);
+		initialAmplitude = iirCoefficient * 0.25f;
+
+		Start();
+	}
+
+	void Pyxis::LFO::Start()
+	{
+		y1 = initialAmplitude;
+		y0 = 0.5f;
+	}
+
+	float Pyxis::LFO::Value() const
+	{
+		return y1 + 0.5f;
+	}
+
+	float Pyxis::LFO::Next()
+	{
+		float temp = y0;
+		y0 = iirCoefficient * y0 - y1;
+		y1 = temp;
+
+		return temp + 0.5f;
 	}
 }

@@ -5,9 +5,6 @@
 #include "DelayBuffer.h"
 #include "StateVariableFilter.h"
 
-#include "Pyxis/fx_engine.h"
-
-
 namespace WaveSabreCore
 {
 	/**
@@ -38,18 +35,34 @@ namespace WaveSabreCore
 		virtual float GetParam(int index) const;
 
 	private:
-		typedef FxEngine<16384, FORMAT_32_BIT> E;
-		E engine_;
-		char* buffer;
+		// Parameters
+		float amount;
+		float inputGain;
+		float reverbTime;
+		float diffusion;
+		float lp;
 
-		float amount_;
-		float inputGain_;
-		float reverbTime_;
-		float diffusion_;
-		float lp_;
+        class LFO 
+        {
+        public:
+			void Init(float frequency);
+			void Start();
+			float Value() const;
+			float Next();
 
-		float lp_decay_1_;
-		float lp_decay_2_;
+        private:
+            float y1;
+            float y0;
+            float iirCoefficient;
+            float initialAmplitude;
+        };
+
+		// State
+		float* buffer;
+		LFO lfo[2];
+		int bufferWritePtr;
+		float lpDecay1;
+		float lpDecay2;
 	};
 }
 
