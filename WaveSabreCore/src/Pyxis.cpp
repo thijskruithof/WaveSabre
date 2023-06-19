@@ -1,8 +1,6 @@
 #include <WaveSabreCore/Pyxis.h>
 #include <WaveSabreCore/Helpers.h>
 
-#include <cassert>
-
 #include <math.h>
 
 
@@ -47,14 +45,6 @@ namespace WaveSabreCore
 
 		float lpState1 = lpDecay1;
 		float lpState2 = lpDecay2;
-
-		// HACK: Fill with random noise
-		for (int i = 0; i < numSamples; ++i)
-		{
-			inputs[0][i] = (float)rand() / (float)RAND_MAX;
-			inputs[1][i] = (float)rand() / (float)RAND_MAX;
-		}
-
 
 		// ap1:		base =     0		length = 113
 		// ap2:		base =   113		length = 162
