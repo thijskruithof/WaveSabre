@@ -44,6 +44,6 @@ after_build:
   - 7z a -tzip c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip c:\projects\wavesabre\pkg\* -r      
 
 artifacts:
-  - path: '*.zip'
+  - path: c:\projects\wavesabre\WaveSabre.%APPVEYOR_BUILD_NUMBER%.zip
     name: wavesabre
 
