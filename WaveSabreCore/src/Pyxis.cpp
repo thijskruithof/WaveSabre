@@ -60,8 +60,6 @@ namespace WaveSabreCore
 
 		lpDecay1 = 0.0f;
 		lpDecay2 = 0.0f;
-
-		srand(1337);
 	}
 
 	Pyxis::~Pyxis()
