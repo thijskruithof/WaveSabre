@@ -46,4 +46,11 @@ after_build:
 artifacts:
   - path: 'WaveSabre*.zip'
     name: wavesabre
-
+    
+deploy:
+- provider: GitHub
+  description: '"WaveSabre - Automated build of Master branch. Includes all compiled binaries in a single zip file'
+  auth_token:
+    secure: VLHgGqEJuBvYjzV5LPbgMC/D6SpiB8+P3AMN872HSRsW45RLHzoOpv1UhcofKmDQ
+  artifact: wavesabre
+  prerelease: true
