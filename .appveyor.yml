@@ -51,6 +51,6 @@ deploy:
 - provider: GitHub
   description: 'WaveSabre - Automated build of Master branch. Includes all compiled binaries in a single zip file'
   auth_token:
-    secure: LsJWxJl9V0DWoi/+qhmedUlbkdO+if2IbtYdinBSxTi+KrCxV2TV5f8CzeyS4ZsQ
+    secure: VLHgGqEJuBvYjzV5LPbgMC/D6SpiB8+P3AMN872HSRsW45RL
   artifact: wavesabre
   prerelease: true
