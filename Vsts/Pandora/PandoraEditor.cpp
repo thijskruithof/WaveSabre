@@ -113,17 +113,17 @@ void PandoraEditor::Open()
     addKnob((VstInt32)Pandora::ParamIndices::ArpeggioInterval, "ArpInterval");
     addKnob((VstInt32)Pandora::ParamIndices::ArpeggioNoteDuration, "ArpNoteDur");
     addSpace(gap);
-    addKnob((VstInt32)Pandora::ParamIndices::Osc1waveform, "Osc2wave");
-    addKnob((VstInt32)Pandora::ParamIndices::Osc1baseToneTranspose, "Osc2base");
-    addKnob((VstInt32)Pandora::ParamIndices::Osc1finetune, "Osc2fine");
-    addKnob((VstInt32)Pandora::ParamIndices::Osc1pulseWidth, "Osc2pw");
+    addKnob((VstInt32)Pandora::ParamIndices::Osc2waveform, "Osc2wave");
+    addKnob((VstInt32)Pandora::ParamIndices::Osc2baseToneTranspose, "Osc2base");
+    addKnob((VstInt32)Pandora::ParamIndices::Osc2finetune, "Osc2fine");
+    addKnob((VstInt32)Pandora::ParamIndices::Osc2pulseWidth, "Osc2pw");
     addKnob((VstInt32)Pandora::ParamIndices::Osc2sync, "Osc2sync");
-    addKnob((VstInt32)Pandora::ParamIndices::MixAmountOsc1, "MixOsc2");
+    addKnob((VstInt32)Pandora::ParamIndices::MixAmountOsc2, "MixOsc2");
     addSpace(gap);
     addSpace(gap);
-    addKnob((VstInt32)Pandora::ParamIndices::Vcf1type, "Vcf2type");
-    addKnob((VstInt32)Pandora::ParamIndices::Vcf1Cutoff, "Vcf2Cutoff");
-    addKnob((VstInt32)Pandora::ParamIndices::Vcf1Resonance, "Vcf2Reso");
+    addKnob((VstInt32)Pandora::ParamIndices::Vcf2type, "Vcf2type");
+    addKnob((VstInt32)Pandora::ParamIndices::Vcf2Cutoff, "Vcf2Cutoff");
+    addKnob((VstInt32)Pandora::ParamIndices::Vcf2Resonance, "Vcf2Reso");
 
     startNextRow();
 
@@ -136,13 +136,13 @@ void PandoraEditor::Open()
     addSpace(gap);
     addSpace(gap);
     addSpace(gap);
-    addKnob((VstInt32)Pandora::ParamIndices::Osc1waveform, "Osc3wave");
-    addKnob((VstInt32)Pandora::ParamIndices::Osc1baseToneTranspose, "Osc3base");
-    addKnob((VstInt32)Pandora::ParamIndices::Osc1finetune, "Osc3fine");
-    addKnob((VstInt32)Pandora::ParamIndices::Osc1pulseWidth, "Osc3pw");
+    addKnob((VstInt32)Pandora::ParamIndices::Osc3waveform, "Osc3wave");
+    addKnob((VstInt32)Pandora::ParamIndices::Osc3baseToneTranspose, "Osc3base");
+    addKnob((VstInt32)Pandora::ParamIndices::Osc3finetune, "Osc3fine");
+    addKnob((VstInt32)Pandora::ParamIndices::Osc3pulseWidth, "Osc3pw");
     addSpace(gap);
     addSpace(gap);
-    addKnob((VstInt32)Pandora::ParamIndices::MixAmountOsc1, "MixOsc3");
+    addKnob((VstInt32)Pandora::ParamIndices::MixAmountOsc3, "MixOsc3");
     addSpace(gap);
     addSpace(gap);
     addKnob((VstInt32)Pandora::ParamIndices::VcfRouting, "VcfRouting");
