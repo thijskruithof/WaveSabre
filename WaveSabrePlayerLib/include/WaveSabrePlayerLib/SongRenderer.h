@@ -25,7 +25,8 @@ namespace WaveSabrePlayerLib
 			Cathedral,
 			Adultery,
 			Specimen,
-			Pandora
+			Pandora,
+			Pyxis
 		};
 
 		typedef WaveSabreCore::Device *(*DeviceFactory)(DeviceId);

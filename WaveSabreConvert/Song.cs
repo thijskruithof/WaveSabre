@@ -22,7 +22,8 @@ namespace WaveSabreConvert
             Cathedral,
             Adultery,
             Specimen,
-            Pandora
+            Pandora,
+            Pyxis
         }
 
         public class Receive
