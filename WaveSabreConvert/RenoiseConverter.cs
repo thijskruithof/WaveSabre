@@ -1069,7 +1069,7 @@ namespace WaveSabreConvert
             // quit if no notes..
             if (lines.Count == 0) return events;
 
-            var lanes = lines.Select(l => l.NoteColumns.NoteColumn).ToList().Max(x => x.Count());
+            var lanes = lines.Where(z => z.NoteColumns != null).Select(l => l.NoteColumns.NoteColumn).ToList().Max(x => x.Count());
 
             for (int i = 0; i < lanes; i++)
             {
@@ -1078,6 +1078,9 @@ namespace WaveSabreConvert
 
                 foreach (var line in lines)
                 {
+                    if (line.NoteColumns == null)
+                        continue;
+
                     if (i >= line.NoteColumns.NoteColumn.Count())
                     {
                         continue;
