@@ -23,6 +23,7 @@ WaveSabreCore::Device *SongFactory(SongRenderer::DeviceId id)
 	case SongRenderer::DeviceId::Specimen: return new WaveSabreCore::Specimen();
 	case SongRenderer::DeviceId::Pandora: return new WaveSabreCore::Pandora();
 	case SongRenderer::DeviceId::Pyxis: return new WaveSabreCore::Pyxis();
+	case SongRenderer::DeviceId::Perseus: return new WaveSabreCore::Perseus();
 	}
 	return nullptr;
 }

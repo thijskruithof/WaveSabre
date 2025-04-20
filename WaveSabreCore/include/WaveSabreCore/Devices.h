@@ -20,5 +20,6 @@
 // Additional devices brought to you by Inque
 #include "Pandora.h"
 #include "Pyxis.h"
+#include "Perseus.h"
 
 #endif

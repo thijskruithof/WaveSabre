@@ -17,7 +17,8 @@ add_library(WaveSabreCore
 	include/WaveSabreCore/Helpers.h
 	include/WaveSabreCore/Leveller.h
 	include/WaveSabreCore/MxcsrFlagGuard.h
-	include/WaveSabreCore/Pandora.h
+	include/WaveSabreCore/Pandora.h	
+	include/WaveSabreCore/Perseus.h
 	include/WaveSabreCore/Pyxis.h
 	include/WaveSabreCore/ResampleBuffer.h
 	include/WaveSabreCore/SamplePlayer.h
@@ -47,6 +48,7 @@ add_library(WaveSabreCore
 	src/Leveller.cpp
 	src/MxcsrFlagGuard.cpp
 	src/Pandora.cpp
+	src/Perseus.cpp
 	src/Pyxis.cpp
 	src/ResampleBuffer.cpp
 	src/SamplePlayer.cpp
