@@ -1325,6 +1325,8 @@ namespace WaveSabreCore
 	Perseus::Perseus()
 		: Device((int)ParamIndices::NumParams)
 	{
+        strummer.Init(0.01f, Helpers::CurrentSampleRate / kMaxBlockSize);
+        part.Init(NULL);
 	}
 
 	Perseus::~Perseus()
