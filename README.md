@@ -8,11 +8,11 @@ WaveSabre is a software synthesizer and toolchain for music for [64K intros](htt
 
 This is a fork of the [original repository](https://github.com/logicomacorp/WaveSabre) that's being developed by logicoma. This fork is being maintained by [Inque](http://glow.inque.org/). We have added small improvements to the various VST plugins, as well as a completely custom-made synthesizer: Pandora.
 
-See [our docs](https://github.com/logicomacorp/WaveSabre/tree/master/Docs) for more info.
+See [our docs](https://github.com/thijskruithof/WaveSabre/tree/master/Docs) for more info.
 
 ## Getting started
 
-Please see [our docs](https://github.com/logicomacorp/WaveSabre/blob/master/Docs/Home.md#building) for prerequisites, building, etc (and let us know what we're missing!).
+Please see [our docs](https://github.com/thijskruithof/WaveSabre/blob/master/Docs/Home.md#building) for prerequisites, building, etc (and let us know what we're missing!).
 
 ## Team
 
