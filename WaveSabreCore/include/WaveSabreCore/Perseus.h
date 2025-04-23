@@ -86,7 +86,7 @@ namespace WaveSabreCore
 
 	private:
         static const int kNumChords = 11;
-        static const int kMaxBlockSize = 1024 * 1024;
+        static const int kMaxBlockSize = 1;
 
         struct PerformanceState 
         {
@@ -1554,10 +1554,10 @@ namespace WaveSabreCore
         class Part 
         {
         public:
-            Part() { }
+            Part()  { }
             ~Part() { }
 
-            void Init(unsigned short int* reverb_buffer);
+            void Init();
 
             void Process(
                 const PerformanceState& performance_state,
@@ -1661,12 +1661,12 @@ namespace WaveSabreCore
             float note_[kMaxPolyphony];
             NoteFilter note_filter_;
 
-            float resonator_input_[kMaxBlockSize];
-            float sympathetic_resonator_input_[kMaxBlockSize];
-            float noise_burst_buffer_[kMaxBlockSize];
+            float* resonator_input_;
+            float* sympathetic_resonator_input_;
+            float* noise_burst_buffer_;
 
-            float out_buffer_[kMaxBlockSize];
-            float aux_buffer_[kMaxBlockSize];
+            float* out_buffer_;
+            float* aux_buffer_;
 
             Limiter limiter_;
 
