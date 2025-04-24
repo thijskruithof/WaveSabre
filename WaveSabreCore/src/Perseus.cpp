@@ -35,6 +35,13 @@ See http://creativecommons.org/licenses/MIT/ for more information.
 #include <math.h>
 
 
+/**
+Todo:
+- patch.Structure should be clamped to 0 .. 0.9995f wherever used?
+- other patch.XXX members should be clamped to 0 .. 1 wherever used?
+- add noise gate on input before Process calls in Run()?
+**/
+
 
 namespace WaveSabreCore
 {
@@ -54,9 +61,11 @@ namespace WaveSabreCore
         for (int i=0; i<numSamples; ++i)
         {
             PerformanceState performance_state;
-            Patch patch;
 
-            // TODO: Add noise gate on input?
+            performance_state.fm = 0.0f; // Freq modulation?
+            performance_state.note = 440.0f; // Note freq?
+            performance_state.tonic = 12.0f + Helpers::ParamToRangedFloat(patch.frequency, 0.0f, 60.0f); //?
+       
             strummer.Process(inputs[1], 1 /*numSamples*/, &performance_state);
             part.Process(performance_state, patch, inputs[1], outputs[0], outputs[1], 1 /*numSamples*/);
         }
@@ -64,14 +73,28 @@ namespace WaveSabreCore
 
 	void Perseus::SetParam(int index, float value)
 	{
-
+        switch ((ParamIndices)index)
+        {
+        case ParamIndices::Frequency:	patch.frequency = value; break;
+        case ParamIndices::Structure:	patch.structure = value; break;
+        case ParamIndices::Brightness:	patch.brightness = value; break;
+        case ParamIndices::Damping:		patch.damping = value; break;
+        case ParamIndices::Position:	patch.position = value; break;
+        }
 	}
 
 	float Perseus::GetParam(int index) const
 	{
+        switch ((ParamIndices)index)
+        {
+        case ParamIndices::Frequency:	return patch.frequency;
+        case ParamIndices::Structure:	return patch.structure;
+        case ParamIndices::Brightness:	return patch.brightness;
+        case ParamIndices::Damping:		return patch.damping;
+        case ParamIndices::Position:	return patch.position;
+        }
 
-
-		return 0.0f;
+        return 0.0f;
 	}
 
 

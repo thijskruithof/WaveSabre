@@ -63,11 +63,11 @@ namespace WaveSabreCore
 	public:
 		enum class ParamIndices
 		{
-			Amount,
-			InputGain,
-			Time,
-			Diffusion,
-			LP,
+            Frequency,
+			Structure,
+            Brightness,
+            Damping,
+            Position,
 
 			NumParams,
 		};
@@ -525,10 +525,11 @@ namespace WaveSabreCore
 
         struct Patch 
         {
-            float structure;
-            float brightness;
-            float damping;
-            float position;
+            float frequency = 0.5f;
+            float structure = 0.5f;
+            float brightness = 0.5f;
+            float damping = 0.5f;
+            float position = 0.5f;
         };
 
         enum ResonatorModel 
@@ -1675,6 +1676,7 @@ namespace WaveSabreCore
 
         Strummer strummer;
         Part part;
+        Patch patch;
 	};
 }
 

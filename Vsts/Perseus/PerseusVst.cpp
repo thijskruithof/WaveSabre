@@ -20,11 +20,11 @@ void PerseusVst::getParameterName(VstInt32 index, char *text)
 {
 	switch ((Perseus::ParamIndices)index)
 	{
-		case Perseus::ParamIndices::Amount	: vst_strncpy(text, "Amount", kVstMaxParamStrLen); break;
-		case Perseus::ParamIndices::InputGain	: vst_strncpy(text, "InputGain", kVstMaxParamStrLen); break;
-		case Perseus::ParamIndices::Time		: vst_strncpy(text, "Time", kVstMaxParamStrLen); break;
-		case Perseus::ParamIndices::Diffusion	: vst_strncpy(text, "Diffusion", kVstMaxParamStrLen); break;
-		case Perseus::ParamIndices::LP		: vst_strncpy(text, "LP", kVstMaxParamStrLen); break;
+		case Perseus::ParamIndices::Frequency:	vst_strncpy(text, "Frequency", kVstMaxParamStrLen); break;
+		case Perseus::ParamIndices::Structure:	vst_strncpy(text, "Structure", kVstMaxParamStrLen); break;
+		case Perseus::ParamIndices::Brightness:	vst_strncpy(text, "Brightness", kVstMaxParamStrLen); break;
+		case Perseus::ParamIndices::Damping:	vst_strncpy(text, "Damping", kVstMaxParamStrLen); break;
+		case Perseus::ParamIndices::Position:	vst_strncpy(text, "Position", kVstMaxParamStrLen); break;
 	}
 }
 

@@ -14,15 +14,15 @@ PerseusEditor::~PerseusEditor()
 
 void PerseusEditor::Open()
 {
-	addKnob((VstInt32)Perseus::ParamIndices::Amount, "Dry/Wet");
+	addKnob((VstInt32)Perseus::ParamIndices::Frequency, "Frequency");
 	addSpacer();
-	addKnob((VstInt32)Perseus::ParamIndices::InputGain, "Input Gain");
+	addKnob((VstInt32)Perseus::ParamIndices::Structure, "Structure");
 	addSpacer();
-	addKnob((VstInt32)Perseus::ParamIndices::Time, "Time");
+	addKnob((VstInt32)Perseus::ParamIndices::Brightness, "Brightness");
 	addSpacer();
-	addKnob((VstInt32)Perseus::ParamIndices::Diffusion, "Diffusion");
+	addKnob((VstInt32)Perseus::ParamIndices::Damping, "Damping");
 	addSpacer();
-	addKnob((VstInt32)Perseus::ParamIndices::LP, "LP");
+	addKnob((VstInt32)Perseus::ParamIndices::Position, "Position");
 
 	VstEditor::Open();
 }
