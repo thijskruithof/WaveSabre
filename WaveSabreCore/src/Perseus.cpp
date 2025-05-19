@@ -114,7 +114,7 @@ namespace WaveSabreCore
 
                 performance_state.internal_exciter = true; // !inputs[IN_INPUT].isConnected();
                 performance_state.internal_strum = false; // !inputs[STRUM_INPUT].isConnected();
-                performance_state.internal_note = true; // !inputs[PITCH_INPUT].isConnected();
+                performance_state.internal_note = false; // !inputs[PITCH_INPUT].isConnected();
 
                 performance_state.strum = strum && !lastStrum;
                 lastStrum = strum;
@@ -148,7 +148,8 @@ namespace WaveSabreCore
             }
 
             // Set output
-            if (!outputBuffer.empty()) {
+            if (!outputBuffer.empty()) 
+            {
                 OutputSample outputFrame = outputBuffer.shift();
 
                 outputs[0][i] = Helpers::Clamp(outputFrame.L, -1.0f, 1.0f);
@@ -172,11 +173,13 @@ namespace WaveSabreCore
 	{
         switch ((ParamIndices)index)
         {
-        case ParamIndices::Frequency:	patch.frequency = value; break;
-        case ParamIndices::Structure:	patch.structure = value; break;
-        case ParamIndices::Brightness:	patch.brightness = value; break;
-        case ParamIndices::Damping:		patch.damping = value; break;
-        case ParamIndices::Position:	patch.position = value; break;
+        case ParamIndices::PolyphonyMode:   polyphonyMode = (int)Helpers::Clamp(value * 2.0f, 0.0f, 2.0f); break;
+        case ParamIndices::ResonatorModel:  resonatorModel = (ResonatorModel)Helpers::Clamp(value * 2.0f, 0.0f, 2.0f); break;
+        case ParamIndices::Frequency:	    patch.frequency = value; break;
+        case ParamIndices::Structure:	    patch.structure = value; break;
+        case ParamIndices::Brightness:	    patch.brightness = value; break;
+        case ParamIndices::Damping:		    patch.damping = value; break;
+        case ParamIndices::Position:	    patch.position = value; break;
         }
 	}
 
@@ -184,11 +187,13 @@ namespace WaveSabreCore
 	{
         switch ((ParamIndices)index)
         {
-        case ParamIndices::Frequency:	return patch.frequency;
-        case ParamIndices::Structure:	return patch.structure;
-        case ParamIndices::Brightness:	return patch.brightness;
-        case ParamIndices::Damping:		return patch.damping;
-        case ParamIndices::Position:	return patch.position;
+        case ParamIndices::PolyphonyMode:   return Helpers::Clamp(polyphonyMode / 2.0f, 0.0f, 1.0f);
+        case ParamIndices::ResonatorModel:  return Helpers::Clamp((float)resonatorModel / 2.0f, 0.0f, 2.0f);
+        case ParamIndices::Frequency:	    return patch.frequency;
+        case ParamIndices::Structure:	    return patch.structure;
+        case ParamIndices::Brightness:	    return patch.brightness;
+        case ParamIndices::Damping:		    return patch.damping;
+        case ParamIndices::Position:	    return patch.position;
         }
 
         return 0.0f;

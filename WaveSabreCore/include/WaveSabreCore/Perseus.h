@@ -63,6 +63,8 @@ namespace WaveSabreCore
 	public:
 		enum class ParamIndices
 		{
+            PolyphonyMode,
+            ResonatorModel,
             Frequency,
 			Structure,
             Brightness,

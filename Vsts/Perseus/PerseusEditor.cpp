@@ -14,6 +14,11 @@ PerseusEditor::~PerseusEditor()
 
 void PerseusEditor::Open()
 {
+	addKnob((VstInt32)Perseus::ParamIndices::PolyphonyMode, "PolyhonyMode");
+	addSpacer();
+	addKnob((VstInt32)Perseus::ParamIndices::ResonatorModel, "ResonatorModel");
+	addSpacer();
+	startNextRow();
 	addKnob((VstInt32)Perseus::ParamIndices::Frequency, "Frequency");
 	addSpacer();
 	addKnob((VstInt32)Perseus::ParamIndices::Structure, "Structure");
