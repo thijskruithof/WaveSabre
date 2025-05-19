@@ -11,7 +11,7 @@ AudioEffect *createEffectInstance(audioMasterCallback audioMaster)
 }
 
 PerseusVst::PerseusVst(audioMasterCallback audioMaster)
-	: VstPlug(audioMaster, (int)Perseus::ParamIndices::NumParams, 2, 2, 'PERS', new Perseus())
+	: VstPlug(audioMaster, (int)Perseus::ParamIndices::NumParams, 2, 2, 'PERS', new Perseus(), true)
 {
 	setEditor(new PerseusEditor(this));
 }

@@ -37,9 +37,8 @@ See http://creativecommons.org/licenses/MIT/ for more information.
 
 /**
 Todo:
-- patch.Structure should be clamped to 0 .. 0.9995f wherever used?
-- other patch.XXX members should be clamped to 0 .. 1 wherever used?
-- add noise gate on input before Process calls in Run()?
+- Take deltaSamples into account from NoteOn, and allow for multiple NodeOn events within a single buffer
+- Derive from SynthDevice instead of Device?
 **/
 
 
@@ -58,16 +57,114 @@ namespace WaveSabreCore
 
 	void Perseus::Run(double songPosition, float **inputs, float **outputs, int numSamples)
 	{
-        for (int i=0; i<numSamples; ++i)
+        for (int i = 0; i < numSamples; ++i)
         {
-            PerformanceState performance_state;
+            // Get input
+            if (!inputBuffer.full()) {
+                float f;
+                f = inputs[0][i];
+                inputBuffer.push(f);
+            }
 
-            performance_state.fm = 0.0f; // Freq modulation?
-            performance_state.note = 440.0f; // Note freq?
-            performance_state.tonic = 12.0f + Helpers::ParamToRangedFloat(patch.frequency, 0.0f, 60.0f); //?
-       
-            strummer.Process(inputs[1], 1 /*numSamples*/, &performance_state);
-            part.Process(performance_state, patch, inputs[1], outputs[0], outputs[1], 1 /*numSamples*/);
+            //// TODO: Get strum from note on?
+            //if (!strum) {
+            //    strum = false;
+            //    //strum = inputs[STRUM_INPUT].getVoltage() >= 1.0;
+            //}
+
+            // Render frames
+            if (outputBuffer.empty()) {
+                float in[24] = {};
+                // Convert input buffer
+                {
+                    // Copy inputBuffer to in
+                    if (inputBuffer.size() < 24)
+                        memcpy(in + (24 - inputBuffer.size()), inputBuffer.startData(), inputBuffer.size() * 4);
+                    else
+                        memcpy(in, inputBuffer.startData(), 24 * 4);
+                    //inputSrc.setRates(args.sampleRate, 48000);
+                    inputBuffer.startIncr(inputBuffer.size());
+                }
+
+                // Polyphony
+                int polyphony = 1 << polyphonyMode;
+                if (part.polyphony() != polyphony)
+                    part.set_polyphony(polyphony);
+                // Model
+                part.set_model(resonatorModel);
+
+                //// Patch
+                //Patch patch;
+                //float structure = paramStructure;// +3.3 * dsp::quadraticBipolar(params[STRUCTURE_MOD_PARAM].getValue()) * inputs[STRUCTURE_MOD_INPUT].getVoltage() / 5.0;
+                //patch.structure = clamp(structure, 0.0f, 0.9995f);
+                //patch.brightness = paramBrightness; // clamp(params[BRIGHTNESS_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].getValue()) * inputs[BRIGHTNESS_MOD_INPUT].getVoltage() / 5.0, 0.0f, 1.0f);
+                //patch.damping = paramDamping; // clamp(params[DAMPING_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[DAMPING_MOD_PARAM].getValue()) * inputs[DAMPING_MOD_INPUT].getVoltage() / 5.0, 0.0f, 0.9995f);
+                //patch.position = clamp(params[POSITION_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[POSITION_MOD_PARAM].getValue()) * inputs[POSITION_MOD_INPUT].getVoltage() / 5.0, 0.0f, 0.9995f);
+
+                // Performance
+                PerformanceState performance_state;
+                performance_state.note = strumNote; // 12.0 * inputs[PITCH_INPUT].getNormalVoltage(1 / 12.0);
+                float transpose = patch.frequency; // params[FREQUENCY_PARAM].getValue();
+                // Quantize transpose if pitch input is connected
+                //if (inputs[PITCH_INPUT].isConnected()) {
+                //    transpose = roundf(transpose);
+                //}
+                performance_state.tonic = 12.0 + Helpers::Clamp(transpose, 0.0f, 60.0f);
+                performance_state.fm = 0.0f; // clamp(48.0 * 3.3 * dsp::quarticBipolar(params[FREQUENCY_MOD_PARAM].getValue()) * inputs[FREQUENCY_MOD_INPUT].getNormalVoltage(1.0) / 5.0, -48.0f, 48.0f);
+
+                performance_state.internal_exciter = true; // !inputs[IN_INPUT].isConnected();
+                performance_state.internal_strum = false; // !inputs[STRUM_INPUT].isConnected();
+                performance_state.internal_note = true; // !inputs[PITCH_INPUT].isConnected();
+
+                performance_state.strum = strum && !lastStrum;
+                lastStrum = strum;
+                strum = false;
+
+                performance_state.chord = Helpers::Clamp((int)roundf(patch.structure * (kNumChords - 1)), 0, kNumChords - 1);
+
+                // Process audio
+                float out[24];
+                float aux[24];
+                {
+                    strummer.Process(in, 24, &performance_state);
+                    part.Process(performance_state, patch, in, out, aux, 24);
+                }
+
+                // Convert output buffer
+                {
+                    OutputSample outputFrames[24];
+                    for (int i = 0; i < 24; i++) {
+                        outputFrames[i].L = out[i];
+                        outputFrames[i].R = aux[i];
+                    }
+
+                    memcpy(outputBuffer.endData(), outputFrames, 24 * sizeof(OutputSample));
+                    //outputSrc.setRates(48000, args.sampleRate);
+                    //int inLen = 24;
+                    int outLen = (outputBuffer.capacity() < 24) ? outputBuffer.capacity() : 24;
+                    //outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
+                    outputBuffer.endIncr(outLen);
+                }
+            }
+
+            // Set output
+            if (!outputBuffer.empty()) {
+                OutputSample outputFrame = outputBuffer.shift();
+
+                outputs[0][i] = Helpers::Clamp(outputFrame.L, -1.0f, 1.0f);
+                outputs[1][i] = Helpers::Clamp(outputFrame.R, -1.0f, 1.0f);
+
+                //// "Note that you need to insert a jack into each output to split the signals: when only one jack is inserted, both signals are mixed together."
+                //if (outputs[ODD_OUTPUT].isConnected() && outputs[EVEN_OUTPUT].isConnected()) {
+                //    outputs[ODD_OUTPUT].setVoltage(clamp(outputFrame.samples[0], -1.0, 1.0) * 5.0);
+                //    outputs[EVEN_OUTPUT].setVoltage(clamp(outputFrame.samples[1], -1.0, 1.0) * 5.0);
+                //}
+                //else {
+                //    float v = clamp(outputFrame.samples[0] + outputFrame.samples[1], -1.0, 1.0) * 5.0;
+                //    outputs[ODD_OUTPUT].setVoltage(v);
+                //    outputs[EVEN_OUTPUT].setVoltage(v);
+                //}
+            }
         }
 	}
 
@@ -96,6 +193,22 @@ namespace WaveSabreCore
 
         return 0.0f;
 	}
+
+    void Perseus::AllNotesOff()
+    {
+
+    }
+
+    void Perseus::NoteOn(int note, int velocity, int deltaSamples)
+    {
+        strum = true;
+        strumNote = note;
+    }
+
+    void Perseus::NoteOff(int note, int deltaSamples)
+    {
+
+    }
 
 
     const float lut_pitch_ratio_high[] = {

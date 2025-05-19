@@ -80,6 +80,10 @@ namespace WaveSabreCore
 		virtual void SetParam(int index, float value);
 		virtual float GetParam(int index) const;
 
+        virtual void AllNotesOff();
+        virtual void NoteOn(int note, int velocity, int deltaSamples);
+        virtual void NoteOff(int note, int deltaSamples);
+
         static const int kMaxModes = 64;
         static const int kMaxPolyphony = 4;
         static const int kNumStrings = kMaxPolyphony * 2;
@@ -1674,8 +1678,94 @@ namespace WaveSabreCore
             static float model_gains_[RESONATOR_MODEL_LAST];
         };
 
+        /** A cyclic buffer which maintains a valid linear array of size S by keeping a copy of the buffer in adjacent memory.
+        This is not thread-safe.
+        */
+        template <typename T, size_t S>
+        struct DoubleRingBuffer {
+            size_t start{ 0 };
+            size_t end{ 0 };
+            T data[2 * S];
+
+            void push(T t) {
+                size_t i = end % S;
+                data[i] = t;
+                data[i + S] = t;
+                end++;
+            }
+            T shift() {
+                size_t i = start % S;
+                T t = data[i];
+                start++;
+                return t;
+            }
+            void clear() {
+                start = end.load();
+            }
+            bool empty() const {
+                return start >= end;
+            }
+            bool full() const {
+                return end - start >= S;
+            }
+            size_t size() const {
+                return end - start;
+            }
+            size_t capacity() const {
+                return S - size();
+            }
+            /** Returns a pointer to S consecutive elements for appending.
+            If any data is appended, you must call endIncr afterwards.
+            Pointer is invalidated when any other method is called.
+            */
+            T* endData() {
+                size_t i = end % S;
+                return &data[i];
+            }
+            void endIncr(size_t n) {
+                size_t i = end % S;
+                size_t e1 = i + n;
+                size_t e2 = (e1 < S) ? e1 : S;
+                // Copy data forward
+                memcpy(&data[S + i], &data[i], sizeof(T) * (e2 - i));
+
+                if (e1 > S) {
+                    // Copy data backward from the doubled block to the main block
+                    memcpy(data, &data[S], sizeof(T) * (e1 - S));
+                }
+                end += n;
+            }
+            /** Returns a pointer to S consecutive elements for consumption
+            If any data is consumed, call startIncr afterwards.
+            */
+            const T* startData() const {
+                size_t i = start % S;
+                return &data[i];
+            }
+            void startIncr(size_t n) {
+                start += n;
+            }
+        };
+
+        DoubleRingBuffer<float, 256> inputBuffer;
+
+        struct OutputSample
+        {
+            float L;
+            float R;
+        };
+      
+        DoubleRingBuffer<OutputSample, 256> outputBuffer;
+
+        Part part;        
         Strummer strummer;
-        Part part;
+        bool strum = false;
+        bool lastStrum = false;
+        int strumNote = 0;
+
+        int polyphonyMode = 0; // 0..2
+        ResonatorModel resonatorModel = RESONATOR_MODEL_MODAL; 
+
         Patch patch;
 	};
 }
