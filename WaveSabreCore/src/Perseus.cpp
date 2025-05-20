@@ -73,7 +73,8 @@ namespace WaveSabreCore
             //}
 
             // Render frames
-            if (outputBuffer.empty()) {
+            if (outputBuffer.empty()) 
+            {
                 float in[24] = {};
                 // Convert input buffer
                 {
@@ -93,22 +94,11 @@ namespace WaveSabreCore
                 // Model
                 part.set_model(resonatorModel);
 
-                //// Patch
-                //Patch patch;
-                //float structure = paramStructure;// +3.3 * dsp::quadraticBipolar(params[STRUCTURE_MOD_PARAM].getValue()) * inputs[STRUCTURE_MOD_INPUT].getVoltage() / 5.0;
-                //patch.structure = clamp(structure, 0.0f, 0.9995f);
-                //patch.brightness = paramBrightness; // clamp(params[BRIGHTNESS_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].getValue()) * inputs[BRIGHTNESS_MOD_INPUT].getVoltage() / 5.0, 0.0f, 1.0f);
-                //patch.damping = paramDamping; // clamp(params[DAMPING_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[DAMPING_MOD_PARAM].getValue()) * inputs[DAMPING_MOD_INPUT].getVoltage() / 5.0, 0.0f, 0.9995f);
-                //patch.position = clamp(params[POSITION_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[POSITION_MOD_PARAM].getValue()) * inputs[POSITION_MOD_INPUT].getVoltage() / 5.0, 0.0f, 0.9995f);
-
                 // Performance
                 PerformanceState performance_state;
                 performance_state.note = strumNote; // 12.0 * inputs[PITCH_INPUT].getNormalVoltage(1 / 12.0);
-                float transpose = patch.frequency; // params[FREQUENCY_PARAM].getValue();
-                // Quantize transpose if pitch input is connected
-                //if (inputs[PITCH_INPUT].isConnected()) {
-                //    transpose = roundf(transpose);
-                //}
+                float transpose = roundf(patch.frequency * 60.0f); // params[FREQUENCY_PARAM].getValue();
+
                 performance_state.tonic = 12.0 + Helpers::Clamp(transpose, 0.0f, 60.0f);
                 performance_state.fm = 0.0f; // clamp(48.0 * 3.3 * dsp::quarticBipolar(params[FREQUENCY_MOD_PARAM].getValue()) * inputs[FREQUENCY_MOD_INPUT].getNormalVoltage(1.0) / 5.0, -48.0f, 48.0f);
 
@@ -123,8 +113,8 @@ namespace WaveSabreCore
                 performance_state.chord = Helpers::Clamp((int)roundf(patch.structure * (kNumChords - 1)), 0, kNumChords - 1);
 
                 // Process audio
-                float out[24];
-                float aux[24];
+                float out[24] = {};
+                float aux[24] = {};
                 {
                     strummer.Process(in, 24, &performance_state);
                     part.Process(performance_state, patch, in, out, aux, 24);
@@ -138,12 +128,13 @@ namespace WaveSabreCore
                         outputFrames[i].R = aux[i];
                     }
 
-                    memcpy(outputBuffer.endData(), outputFrames, 24 * sizeof(OutputSample));
+                    int numSamples = (outputBuffer.capacity() < 24) ? outputBuffer.capacity() : 24;
+                    memcpy(outputBuffer.endData(), outputFrames, numSamples * sizeof(OutputSample));
                     //outputSrc.setRates(48000, args.sampleRate);
                     //int inLen = 24;
-                    int outLen = (outputBuffer.capacity() < 24) ? outputBuffer.capacity() : 24;
+                    //int outLen = 24; // (outputBuffer.capacity() < 24) ? outputBuffer.capacity() : 24;
                     //outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
-                    outputBuffer.endIncr(outLen);
+                    outputBuffer.endIncr(numSamples);
                 }
             }
 
@@ -165,6 +156,12 @@ namespace WaveSabreCore
                 //    outputs[ODD_OUTPUT].setVoltage(v);
                 //    outputs[EVEN_OUTPUT].setVoltage(v);
                 //}
+            }
+            else
+            {
+                outputs[0][i] = 0.0f;
+                outputs[1][i] = 0.0f;
+
             }
         }
 	}
